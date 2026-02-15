@@ -1,0 +1,34 @@
+name: CI (Lint & Test)
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        layer: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend: ['backend/**']
+            frontend: ['frontend/**']
+
+      - name: Backend CI
+        if: matrix.layer == 'backend' && steps.filter.outputs.backend == 'true'
+        run: |
+          cd backend
+          go test ./...
+
+      - name: Frontend CI
+        if: matrix.layer == 'frontend' && steps.filter.outputs.frontend == 'true'
+        run: |
+          cd frontend
+          npm ci
+          npm run lint
+          npm run build
