@@ -1,0 +1,305 @@
+openapi: 3.0.3
+info:
+  title: Team26 Backend API
+  version: 0.1.0
+  description: API based on sequence.mmd and er.mmd
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Auth
+    description: Authentication
+  - name: Fatigue
+    description: Fatigue logging and retrieval
+security:
+  - bearerAuth: []
+paths:
+  /auth/signup:
+    post:
+      summary: Sign up
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "200":
+          description: Signup success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/signin:
+    post:
+      summary: Sign in
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SigninRequest"
+      responses:
+        "200":
+          description: Signin success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+  /auth/logout:
+    post:
+      summary: Logout (revoke refresh token)
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "204":
+          description: Logged out
+  /fatigue:
+    post:
+      summary: Create fatigue log
+      tags:
+        - Fatigue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FatigueCreateRequest"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FatigueCreateResponse"
+    get:
+      summary: Get fatigue logs
+      tags:
+        - Fatigue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: u
+          in: query
+          required: true
+          description: User UUID
+          schema:
+            type: string
+            format: uuid
+        - name: f
+          in: query
+          required: true
+          description: From timestamp (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: t
+          in: query
+          required: true
+          description: To timestamp (inclusive)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Fatigue logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FatigueListResponse"
+  /ws/fatigue:
+    get:
+      summary: Fatigue updates WebSocket
+      tags:
+        - Fatigue
+      description: WebSocket endpoint emitting fatigue updates after POST /fatigue
+      security:
+        - bearerAuth: []
+      responses:
+        "101":
+          description: Switching Protocols
+      x-websocket: true
+components:
+  schemas:
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        display_name:
+          type: string
+    SigninRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - access_token
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - display_name
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    FatigueCreateRequest:
+      type: object
+      required:
+        - user_id
+        - game_id
+        - face_score
+        - voice_score
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        game_id:
+          type: string
+          format: uuid
+        face_score:
+          type: integer
+          minimum: 0
+        voice_score:
+          type: integer
+          minimum: 0
+        recorded_at:
+          type: string
+          format: date-time
+    FatigueCreateResponse:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+    FatigueListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FatigueLog"
+    FatigueLog:
+      type: object
+      required:
+        - id
+        - user_id
+        - game_id
+        - face_score
+        - voice_score
+        - recorded_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        game_id:
+          type: string
+          format: uuid
+        face_score:
+          type: integer
+          minimum: 0
+        voice_score:
+          type: integer
+          minimum: 0
+        recorded_at:
+          type: string
+          format: date-time
+    RefreshRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+    RefreshResponse:
+      type: object
+      required:
+        - access_token
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+    LogoutRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
