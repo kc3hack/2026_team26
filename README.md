@@ -6,7 +6,7 @@
 
 
 ## チーム名
-チーム○ XXXX
+チーム26 同級生3卒年
 <!-- チームIDとチーム名を入力してください -->
 
 
@@ -33,6 +33,9 @@
 ### デザイン面
 
 ### その他
+
+GitHubProjectsを用いたタスク管理、GitHubActionsを用いたCI/CDなど、開発を爆速かつ正確にする工夫を凝らしました。
+https://github.com/orgs/kc3hack/projects/20
 
 ## 使用技術
 
