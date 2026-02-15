@@ -78,3 +78,10 @@ type FatigueLog struct {
 	VoiceScore int       `json:"voice_score" db:"voice_score"`
 	RecordedAt time.Time `json:"recorded_at" db:"recorded_at"`
 }
+
+// Game represents a game record
+type Game struct {
+	ID      string `json:"id" db:"id"`
+	Name    string `json:"name" db:"name"`
+	Process string `json:"process" db:"process"`
+}
