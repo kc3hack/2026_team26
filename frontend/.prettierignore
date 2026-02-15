@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+build
+public
+venv
+*.pyc
+__pycache__
+.vscode/
+*-lock.*
+package.*
