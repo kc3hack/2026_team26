@@ -1,0 +1,53 @@
+erDiagram
+  games ||--o{ fatigue_logs : "belongs to"
+  users ||--o{ fatigue_logs : "records"
+  %% users }o--o{ team_members : "belongs to"
+  %% teams ||--o{ team_members : "has"
+  %% users ||--o{ game_accounts : "owns"
+  users ||--o{ refresh_tokens : "records"
+
+  users {
+    uuid id PK
+    string email UK
+    string display_name
+    timestamp created_at
+    %% string google_id UK "feat: Googleログイン連携用"
+  }
+
+  fatigue_logs {
+    uuid id PK
+    uuid user_id FK
+    uuid game FK "ゲーム情報"
+    integer face_score "表情ベースの体力 0-100(普通)-125"
+    integer voice_score "音声ベースの体力 0-100(普通)-125"
+    timestamp recorded_at
+  }
+
+  games {
+    uuid id PK
+    string name "ゲーム名"
+    string process "プロセス名"
+  }
+
+  refresh_tokens {
+    uuid id PK
+    uuid user_id FK
+    string token_hash "ハッシュ化したリフレッシュトークン"
+    timestamp expires_at
+    timestamp created_at
+    boolean revoked
+    string client_info "任意: UA/IP 等"
+  }
+
+  %% teams {
+  %%   uuid id PK
+  %%   string team_name
+  %%   uuid owner_id "チーム作成者"
+  %%   timestamp created_at
+  %% }
+
+  %% team_members {
+  %%   uuid team_id PK, FK
+  %%   uuid user_id PK, FK
+  %%   timestamp joined_at
+  %% }

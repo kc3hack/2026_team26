@@ -1,0 +1,54 @@
+sequenceDiagram
+  autonumber
+  participant Frontend as フロント
+  actor User as ユーザー
+  participant Desktop as Windowsクライアント
+  participant Backend as サーバー
+  participant DB as PostgreSQL
+
+  Note over User, DB: ユーザ登録
+  User->>Desktop: "新規登録"をクリック
+  Desktop->>Backend: POST: /auth/signup
+  Backend->>DB: ユーザ情報登録
+  DB-->>Backend: ユーザ情報確定
+  Backend->>DB: ユーザ情報問い合わせ
+  DB-->>Backend: ユーザ情報
+  Backend-->>Desktop: Res: 200 OK (access_token + refresh_token)
+  Desktop->>User: "ログイン成功"を表示
+
+  Note over User, DB: ユーザログイン
+  User->>Desktop: "ログイン"をクリック
+  Desktop->>Backend: POST: /auth/signin
+  Backend->>DB: ユーザ情報問い合わせ
+  DB-->>Backend: ユーザ情報
+  Backend-->>Desktop: Res: 200 OK (access_token + refresh_token)
+  Desktop->>User: "ログイン成功"を表示
+
+  Note over Desktop, Backend: トークン更新 (リフレッシュ)
+  Desktop->>Backend: POST: /auth/refresh
+  Backend->>DB: refresh_tokens 検索
+  DB-->>Backend: refresh_token レコード
+  Backend-->>Desktop: Res: 200 OK (new access_token [+ new refresh_token])
+
+
+  Note over User, DB: 疲労度の記録
+  User->>Desktop: 生体情報（カメラなど）
+  Desktop->>Backend: POST: /fatigue (Authorization: Bearer <access_token>)
+  Backend->>DB: 疲労度記録
+  DB-->>Backend: 疲労度確定
+  Backend-->>Desktop: Res: 200 OK
+  Backend->>Frontend: WS emit fatigue
+  Backend->>Desktop: WS emit fatigue
+
+  Note over Frontend, DB: 疲労度の取得
+  Frontend->>Backend: GET: /fatigue?u={uuid}&f={ここから}&t={ここまで} (Authorization: Bearer <access_token>)
+  Desktop->>Backend: GET: /fatigue?u={}&f={}&t={} (Authorization: Bearer <access_token>)
+  Backend->>DB: 疲労度検索
+  DB-->>Backend: 疲労度
+  Backend-->>Frontend: Res 200
+  Backend-->>Desktop: Res 200
+
+  Note over Desktop, Backend: WebSocket 接続 (認証)
+  Desktop->>Backend: WS connect /ws/fatigue (Authorization: Bearer <access_token>)
+  Backend->>Backend: token 検証
+  Backend-->>Desktop: WS 101 / 接続確立
