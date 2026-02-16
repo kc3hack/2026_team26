@@ -1,0 +1,30 @@
+name: PR Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  deploy:
+    if: github.event.action != 'closed'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Preview
+        run: |
+          # PR番号を変数化
+          export PR_NUMBER=${{ github.event.number }}
+          # Docker Composeでプロジェクト名を分離して起動
+          docker compose -p pr-${PR_NUMBER} up -d --build
+        env:
+          VIRTUAL_HOST: pr-${{ github.event.number }}.your-domain.com
+
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: self-hosted
+    steps:
+      - name: Destroy Preview
+        run: |
+          export PR_NUMBER=${{ github.event.number }}
+          docker compose -p pr-${PR_NUMBER} down -v
