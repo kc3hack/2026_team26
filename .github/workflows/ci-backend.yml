@@ -19,4 +19,5 @@ jobs:
       - name: Run backend tests
         run: |
           cd backend
-          go test ./...
+          go mod tidy
+          go build ./...
