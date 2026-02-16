@@ -4,6 +4,8 @@ import (
     "database/sql"
     "net/url"
 
+    _ "github.com/lib/pq"
+
     "github.com/team26/backend/internal/config"
 )
 
