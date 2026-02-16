@@ -14,6 +14,7 @@
 ## 変更の種類
 - [ ] frontend (フロントエンド)
 - [ ] backend (バックエンド)
+- [ ] desktop (Windows)
 - [ ] infra (インフラ)
 - [ ] docs (ドキュメント・その他)
 
