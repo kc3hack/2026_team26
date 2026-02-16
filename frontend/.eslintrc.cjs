@@ -11,6 +11,7 @@ module.exports = {
     sourceType: 'module',
     ecmaFeatures: { jsx: true },
     project: ['./tsconfig.app.json', './tsconfig.node.json'],
+    tsconfigRootDir: __dirname,
   },
   plugins: ['react', '@typescript-eslint', 'react-hooks'],
   extends: [
