@@ -1,1 +1,7 @@
 .env
+*.crt
+*.key
+*.pem
+*.log
+*.sql
+![0-9]^3*.sql

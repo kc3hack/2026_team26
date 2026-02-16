@@ -1,12 +1,12 @@
 package db
 
 import (
-    "database/sql"
-    "net/url"
+	"database/sql"
+	"net/url"
 
-    _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 
-    "github.com/team26/backend/internal/config"
+	"github.com/team26/backend/internal/config"
 )
 
 func Connect(cfg *config.Config) (*sql.DB, error) {
@@ -17,6 +17,10 @@ func Connect(cfg *config.Config) (*sql.DB, error) {
         User:   url.UserPassword(cfg.DBUser, cfg.DBPassword),
         Path:   cfg.DBName,
     }
+    // disable SSL if the server doesn't support it (or configure SSL on the server)
+    q := u.Query()
+    q.Set("sslmode", "disable")
+    u.RawQuery = q.Encode()
     dsn := u.String()
     db, err := sql.Open("postgres", dsn)
     if err != nil {
