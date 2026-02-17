@@ -1,26 +1,50 @@
-import { useState } from 'react';
-import './App.css';
-import reactLogo from './assets/react.svg';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 
 function App() {
-  const [count, setCount] = useState(0);
+  // トークンを保存する場所（リロードしても消えないようにlocalStorageを使うと良いが、今回は簡易的にStateで）
+  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [userId, setUserId] = useState<string | null>(localStorage.getItem('user_id'));
+  // トークンが変更されたら保存
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('auth_token', token);
+    } else {
+      localStorage.removeItem('auth_token');
+    }
+  }, [token]);
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem('user_id', userId);
+    } else {
+      localStorage.removeItem('user_id');
+    }
+  }, [userId]);
+
+  const logout = () => {
+    setToken(null);
+    setUserId(null);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the React logo to learn more</p>
-    </>
+    <BrowserRouter>
+      <Routes>
+        {/* トークンがあればダッシュボード、なければログイン画面へ */}
+        <Route 
+          path="/" 
+          element={token ? <Dashboard token={token} logout={logout} userId={userId} /> : <Navigate to="/login" />} 
+        />
+        
+        {/* ログイン画面 */}
+        <Route path="/login" element={<Login setToken={setToken} setUserId={setUserId} />} />
+        
+        {/* 新規登録画面 */}
+        <Route path="/register" element={<Register setUserId={setUserId} />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
