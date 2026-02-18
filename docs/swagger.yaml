@@ -117,18 +117,25 @@ paths:
             format: uuid
         - name: f
           in: query
-          required: true
+          required: false
           description: From timestamp (inclusive)
           schema:
             type: string
             format: date-time
         - name: t
           in: query
-          required: true
+          required: false
           description: To timestamp (inclusive)
           schema:
             type: string
             format: date-time
+        - name: n
+          in: query
+          required: false
+          description: Max Number of responses
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "200":
           description: Fatigue logs
@@ -168,6 +175,7 @@ components:
       required:
         - email
         - password
+        - display_name
       properties:
         email:
           type: string
@@ -224,7 +232,6 @@ components:
       type: object
       required:
         - user_id
-        - game_id
         - face_score
         - voice_score
       properties:

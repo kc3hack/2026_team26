@@ -39,6 +39,6 @@ func (s *FatigueService) Create(req *model.FatigueCreateRequest) (*model.Fatigue
     return &model.FatigueCreateResponse{ID: f.ID}, nil
 }
 
-func (s *FatigueService) List(userID string, from, to time.Time) ([]model.FatigueLog, error) {
-    return s.Store.ListByUserRange(userID, from, to)
+func (s *FatigueService) List(userID string, from, to time.Time, maxNum int) ([]model.FatigueLog, error) {
+    return s.Store.ListByUserRange(userID, from, to, maxNum)
 }
