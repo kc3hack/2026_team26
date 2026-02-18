@@ -17,9 +17,11 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ApiErrorResponse, AuthResponse } from '../types';
+import type SigninReq from '../types/request/signinReq';
+import type ApiErrorResponse from '../types/responce/errorRes';
+import type SigninRes from '../types/responce/signinRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 const theme = createTheme({
   palette: {
@@ -35,11 +37,12 @@ const theme = createTheme({
 });
 
 interface LoginProps {
-  setToken: (_token: string) => void;
-  setUserId: (_userId: string) => void;
+  readonly setToken: (_token: string) => void;
+  readonly setRefreshToken: (_refreshToken: string) => void; // 追加
+  readonly setUserId: (_userId: string) => void;
 }
 
-export default function Login({ setToken, setUserId }: LoginProps) {
+export default function Login(props: LoginProps) {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -52,11 +55,11 @@ export default function Login({ setToken, setUserId }: LoginProps) {
     setErrorMsg(null);
 
     try {
-      // API 0.1.0 仕様: POST /auth/signin
-      const res = await axios.post<AuthResponse>(`${API_URL}/auth/signin`, { email, password });
-
-      setToken(res.data.access_token);
-      setUserId(res.data.user.id);
+      const body: SigninReq = { email, password };
+      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, body);
+      props.setToken(res.data.access_token);
+      props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
+      props.setUserId(res.data.user.id);
       navigate('/');
     } catch (error) {
       console.error(error);
@@ -64,7 +67,7 @@ export default function Login({ setToken, setUserId }: LoginProps) {
 
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ApiErrorResponse;
-        if (errData && errData.message) message = errData.message;
+        if (errData?.message) message = errData.message;
       }
 
       setErrorMsg(message);
@@ -82,17 +85,25 @@ export default function Login({ setToken, setUserId }: LoginProps) {
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: '#f0f2f5',
-          padding: 2,
+          p: { xs: 2, md: 4 },
         }}
       >
         <Paper
           elevation={12}
-          sx={{ display: 'flex', maxWidth: 1000, width: '100%', height: 600, overflow: 'hidden' }}
+          sx={{
+            display: 'flex',
+            maxWidth: 'xl',
+            width: '100%',
+            minHeight: { xs: 'auto', md: '80vh' },
+            overflow: 'hidden',
+            flexDirection: { xs: 'column', md: 'row' },
+          }}
         >
+          {/* 左側：ビジュアルエリア */}
           <Grid
             container
             sx={{
-              width: '50%',
+              width: { xs: '100%', md: '55%', lg: '60%' },
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               display: { xs: 'none', md: 'flex' },
               flexDirection: 'column',
@@ -100,44 +111,76 @@ export default function Login({ setToken, setUserId }: LoginProps) {
               alignItems: 'center',
               color: 'white',
               p: 4,
+              position: 'relative',
             }}
           >
-            <MonitorHeartIcon sx={{ fontSize: 100, mb: 2, opacity: 0.9 }} />
+            <Box
+              sx={{
+                position: 'absolute',
+                top: -50,
+                left: -50,
+                width: 200,
+                height: 200,
+                borderRadius: '50%',
+                bgcolor: 'rgba(255,255,255,0.1)',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 50,
+                right: -50,
+                width: 300,
+                height: 300,
+                borderRadius: '50%',
+                bgcolor: 'rgba(255,255,255,0.05)',
+              }}
+            />
+
+            <MonitorHeartIcon sx={{ fontSize: { md: 100, lg: 120 }, mb: 3, opacity: 0.9 }} />
             <Typography
-              variant="h4"
+              variant="h3"
               component="div"
-              sx={{ mb: 1, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
+              sx={{ mb: 2, textShadow: '0 2px 4px rgba(0,0,0,0.2)', fontWeight: 800 }}
             >
               はよ寝ろくん
             </Typography>
-            <Typography variant="subtitle1" sx={{ opacity: 0.8, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ opacity: 0.9, textAlign: 'center', lineHeight: 1.6 }}>
               リアルタイム疲労検知＆
               <br />
               モニタリングシステム
             </Typography>
           </Grid>
+
+          {/* 右側：入力フォームエリア */}
           <Box
             sx={{
-              width: { xs: '100%', md: '50%' },
+              width: { xs: '100%', md: '45%', lg: '40%' },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              p: 4,
+              p: { xs: 4, md: 6, lg: 8 },
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: '#667eea' }}>
-              <LockOutlinedIcon />
+            <Avatar sx={{ m: 1, bgcolor: '#667eea', width: 56, height: 56 }}>
+              <LockOutlinedIcon fontSize="large" />
             </Avatar>
-            <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+            <Typography
+              component="h1"
+              variant="h4"
+              sx={{ mb: 4, fontWeight: 'bold', color: '#333' }}
+            >
               ログイン
             </Typography>
+
             {errorMsg && (
-              <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
+              <Alert severity="error" sx={{ mb: 3, width: '100%' }}>
                 {errorMsg}
               </Alert>
             )}
-            <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', maxWidth: 320 }}>
+
+            <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', maxWidth: 400 }}>
               <TextField
                 margin="normal"
                 required
@@ -146,6 +189,8 @@ export default function Login({ setToken, setUserId }: LoginProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
+                InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
+                InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />
               <TextField
                 margin="normal"
@@ -155,22 +200,30 @@ export default function Login({ setToken, setUserId }: LoginProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
+                InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, height: 50, fontWeight: 'bold' }}
+                size="large"
+                sx={{ mt: 4, mb: 3, height: 56, fontSize: '1.1rem', fontWeight: 'bold' }}
                 disabled={isLoading}
               >
-                {isLoading ? <CircularProgress size={24} color="inherit" /> : 'ログイン'}
+                {isLoading ? <CircularProgress size={28} color="inherit" /> : 'ログイン'}
               </Button>
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
                 <Link
                   component="button"
-                  variant="body2"
+                  variant="body1"
                   onClick={() => navigate('/register')}
-                  sx={{ textDecoration: 'none', fontWeight: 'bold', color: 'primary.main' }}
+                  sx={{
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                    color: 'primary.main',
+                    fontSize: '1rem',
+                  }}
                 >
                   新しいアカウントを作成
                 </Link>
