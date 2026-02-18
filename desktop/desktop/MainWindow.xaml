@@ -13,6 +13,7 @@
         </LinearGradientBrush>
     </Window.Background>
     <Grid>
-        <Image x:Name="imageDisplay" Stretch="Uniform" Height="NaN" Width="NaN" />
+        <ProgressBar x:Name="volumeBar" Minimum="0" Maximum="1" Height="20" Width="200" VerticalAlignment="Bottom" Margin="10" RenderTransformOrigin="0.539,1.237"/>
+        <Image x:Name="imageDisplay" Stretch="Uniform" Height="350" Width="NaN" />
     </Grid>
 </Window>
