@@ -93,7 +93,16 @@ function App() {
             <Login setToken={setToken} setRefreshToken={setRefreshToken} setUserId={setUserId} />
           }
         />
-        <Route path="/register" element={<Register setUserId={setUserId} />} />
+        <Route
+          path="/register"
+          element={
+            <Register
+              setAccessToken={setToken}
+              setRefreshToken={setRefreshToken}
+              setUserId={setUserId}
+            />
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -17,9 +17,11 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ApiErrorResponse, AuthResponse } from '../types'; // types.tsが存在する必要あり
+import type SignupReq from '../types/request/signupReq';
+import type ApiErrorResponse from '../types/responce/errorRes';
+import type SignupRes from '../types/responce/signupRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 const theme = createTheme({
   palette: {
@@ -35,10 +37,12 @@ const theme = createTheme({
 });
 
 interface RegisterProps {
-  setUserId?: (_userId: string) => void;
+  readonly setUserId: (_userId: string) => void;
+  readonly setAccessToken: (_token: string) => void;
+  readonly setRefreshToken: (_refreshToken: string) => void;
 }
 
-export default function Register(_props: RegisterProps) {
+export default function Register(props: RegisterProps) {
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -57,13 +61,18 @@ export default function Register(_props: RegisterProps) {
     setIsLoading(true);
     setErrorMsg(null);
 
+    const req: SignupReq = {
+      email: email,
+      password: password,
+      display_name: username,
+    };
     try {
-      await axios.post<AuthResponse>(`${API_URL}/auth/signup`, {
-        email: email,
-        password: password,
-        display_name: username,
-      });
-
+      const res = await axios.post<SignupRes>(`${API_URL}/auth/signup`, req);
+      if (res.status !== 200) throw new Error('APIエラー: ' + res.statusText);
+      const data = res.data;
+      props.setAccessToken(data.access_token);
+      props.setRefreshToken(data.refresh_token || '');
+      props.setUserId(data.user.id);
       alert('登録完了！ログイン画面へ移動します。');
       navigate('/login');
     } catch (error) {
@@ -72,7 +81,7 @@ export default function Register(_props: RegisterProps) {
 
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ApiErrorResponse;
-        if (errData && errData.message) {
+        if (errData?.message) {
           message = errData.message;
         }
       }

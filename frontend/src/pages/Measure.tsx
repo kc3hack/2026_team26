@@ -17,19 +17,20 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { FatigueCreateRequest, FatigueCreateResponse } from '../types';
+import type FatigueCreateReq from '../types/request/fatigueCreateReq';
+import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 // 仮のゲームID
 const DUMMY_GAME_ID = '00000000-0000-0000-0000-000000000000';
 
 interface MeasureProps {
-  token: string | null;
-  userId: string | null;
+  readonly token: string | null;
+  readonly userId: string | null;
 }
 
-export default function Measure({ token, userId }: MeasureProps) {
+export default function Measure(props: MeasureProps) {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -52,7 +53,7 @@ export default function Measure({ token, userId }: MeasureProps) {
 
   // ▼ カメラを停止する関数
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
+    if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
@@ -61,7 +62,7 @@ export default function Measure({ token, userId }: MeasureProps) {
 
   // ▼ 測定とデータ送信を行う関数
   const measureAndSend = useCallback(async () => {
-    if (!token || !userId) return;
+    if (!props.token || !props.userId) return;
 
     const dummyFaceScore = Math.floor(Math.random() * 100);
     const dummyVoiceScore = Math.floor(Math.random() * 100);
@@ -69,16 +70,16 @@ export default function Measure({ token, userId }: MeasureProps) {
     setLatestScore({ face: dummyFaceScore, voice: dummyVoiceScore });
 
     try {
-      const payload: FatigueCreateRequest = {
-        user_id: userId,
+      const payload: FatigueCreateReq = {
+        user_id: props.userId,
         game_id: DUMMY_GAME_ID,
         face_score: dummyFaceScore,
         voice_score: dummyVoiceScore,
         recorded_at: new Date().toISOString(),
       };
 
-      await axios.post<FatigueCreateResponse>(`${API_URL}/fatigue`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, payload, {
+        headers: { Authorization: `Bearer ${props.token}` },
       });
 
       const time = new Date().toLocaleTimeString();
@@ -90,7 +91,7 @@ export default function Measure({ token, userId }: MeasureProps) {
       console.error('送信エラー:', error);
       setLogs((prev) => ['送信失敗...', ...prev.slice(0, 4)]);
     }
-  }, [token, userId]);
+  }, [props.token, props.userId]);
 
   // ▼ 録画状態の管理
   useEffect(() => {
@@ -257,7 +258,13 @@ export default function Measure({ token, userId }: MeasureProps) {
         {/* 送信ログ */}
         <Box sx={{ mt: 4, width: '100%', maxWidth: 500 }}>
           {logs.map((log, i) => (
-            <Typography key={i} variant="caption" display="block" color="grey.500" align="center">
+            <Typography
+              key={`log-${i}`}
+              variant="caption"
+              display="block"
+              color="grey.500"
+              align="center"
+            >
               {log}
             </Typography>
           ))}

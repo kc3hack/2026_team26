@@ -22,14 +22,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { FatigueListResponse, FatigueLog } from '../types';
+import type FatigueLog from '../types/fatigueLog';
+import type FatigueListRes from '../types/responce/fatigueListRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface DashboardProps {
-  token: string;
-  logout: () => void;
-  userId: string | null;
+  readonly token: string;
+  readonly logout: () => void;
+  readonly userId: string | null;
 }
 
 // グラフ表示用に時間を加工した型
@@ -37,7 +38,7 @@ interface ChartData extends FatigueLog {
   time: string;
 }
 
-export default function Dashboard({ token, logout, userId }: DashboardProps) {
+export default function Dashboard(props: DashboardProps) {
   const [data, setData] = useState<ChartData[]>([]);
   const [currentStatus, setCurrentStatus] = useState<{
     label: string;
@@ -48,7 +49,7 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
   });
 
   const fetchData = useCallback(async () => {
-    if (!userId) return;
+    if (!props.userId) return;
 
     const now = new Date();
     const to = now.toISOString();
@@ -56,9 +57,9 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
 
     try {
       // API 0.1.0 仕様: GET /fatigue?u={userId}&f={start}&t={to}
-      const res = await axios.get<FatigueListResponse>(`${API_URL}/fatigue`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { u: userId, f: start, t: to },
+      const res = await axios.get<FatigueListRes>(`${API_URL}/fatigue`, {
+        headers: { Authorization: `Bearer ${props.token}` },
+        params: { u: props.userId, f: start, t: to },
       });
 
       const logs = res.data.items || [];
@@ -76,7 +77,7 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
       setData(formattedData);
 
       if (formattedData.length > 0) {
-        const latest = formattedData[formattedData.length - 1];
+        const latest = formattedData.at(formattedData.length - 1 || 0)!;
         // face_scoreに基づいた判定
         if (latest.face_score <= 30) {
           setCurrentStatus({ label: '危険 (休憩してください)', color: 'error' });
@@ -91,7 +92,7 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
     } catch (error) {
       console.error('データ取得失敗', error);
     }
-  }, [token, userId]);
+  }, [props.token, props.userId]);
 
   useEffect(() => {
     fetchData();
@@ -116,9 +117,9 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
             疲労モニタリングシステム
           </Typography>
           <Typography variant="caption" sx={{ mr: 2 }}>
-            ID: {userId}
+            ID: {props.userId}
           </Typography>
-          <Button color="inherit" onClick={logout}>
+          <Button color="inherit" onClick={props.logout}>
             ログアウト
           </Button>
         </Toolbar>
