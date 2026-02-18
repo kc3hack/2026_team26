@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -8,18 +10,44 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.IO;
+using System.Diagnostics;
 
 
 namespace desktop
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+
     public partial class MainWindow : Window
     {
+        private CameraDevice _camera;
+        private AudioDevice _audio;
+
         public MainWindow()
         {
             InitializeComponent();
+            _camera = new CameraDevice(0);
+            _audio = new AudioDevice();
+
+            CompositionTarget.Rendering += UpdateFrame;
+        }
+
+        private void UpdateFrame(object sender, EventArgs e)
+        {
+            var source = _camera.GetFrameSource();
+            if (source != null)
+            {
+                // XAMLに書いた <Image x:Name="imageDisplay" /> に表示
+                imageDisplay.Source = source;
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            CompositionTarget.Rendering -= UpdateFrame;
+            _camera?.Dispose();
+            _audio?.Dispose();
+            base.OnClosed(e);
         }
     }
+
 }
