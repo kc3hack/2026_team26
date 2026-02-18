@@ -148,6 +148,19 @@ paths:
         "101":
           description: Switching Protocols
       x-websocket: true
+  /update:
+    get:
+      summary: check newest version
+      tags:
+        - updates
+      description: アップデートの確認用
+      responses:
+        "200":
+          description: 正常時
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
 components:
   schemas:
     SignupRequest:
@@ -298,6 +311,19 @@ components:
       properties:
         refresh_token:
           type: string
+    UpdateResponse:
+      type: object
+      properties:
+        current:
+          type: string
+          format: version
+          description: 現在の最終バージョン
+        support:
+          type: array
+          description: サポートしているバージョンのリスト
+          items:
+            type: string
+            format: version
   securitySchemes:
     bearerAuth:
       type: http

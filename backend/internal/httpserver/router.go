@@ -16,5 +16,6 @@ func NewRouter(auth *service.AuthService, fatigue *service.FatigueService, hub *
     r.HandleFunc("/ws/fatigue", makeWSHandler(hub))
     r.HandleFunc("/auth/signup", makeSignupHandler(auth)).Methods("POST")
     r.HandleFunc("/auth/signin", makeSigninHandler(auth)).Methods("POST")
+		r.HandleFunc("/update", makeCheckUpdateHandler()).Methods("GET")
     return r
 }
