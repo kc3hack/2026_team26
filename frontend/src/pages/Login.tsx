@@ -17,9 +17,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ApiErrorResponse, AuthResponse } from '../types';
+import type ApiErrorResponse from '../types/responce/errorRes';
+import type SigninRes from '../types/responce/signinRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 const theme = createTheme({
   palette: {
@@ -36,12 +37,12 @@ const theme = createTheme({
 
 // Propsの定義を更新
 interface LoginProps {
-  setToken: (_token: string) => void;
-  setRefreshToken: (_refreshToken: string) => void; // 追加
-  setUserId: (_userId: string) => void;
+  readonly setToken: (_token: string) => void;
+  readonly setRefreshToken: (_refreshToken: string) => void; // 追加
+  readonly setUserId: (_userId: string) => void;
 }
 
-export default function Login({ setToken, setRefreshToken, setUserId }: LoginProps) {
+export default function Login(props: LoginProps) {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -54,10 +55,10 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
     setErrorMsg(null);
 
     try {
-      const res = await axios.post<AuthResponse>(`${API_URL}/auth/signin`, { email, password });
-      setToken(res.data.access_token);
-      setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
-      setUserId(res.data.user.id);
+      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, { email, password });
+      props.setToken(res.data.access_token);
+      props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
+      props.setUserId(res.data.user.id);
       navigate('/');
     } catch (error) {
       console.error(error);
@@ -65,7 +66,7 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
 
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ApiErrorResponse;
-        if (errData && errData.message) message = errData.message;
+        if (errData?.message) message = errData.message;
       }
 
       setErrorMsg(message);

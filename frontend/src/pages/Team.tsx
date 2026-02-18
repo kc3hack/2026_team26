@@ -25,16 +25,17 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
+import type { CreateTeamRequest, JoinTeamRequest, Team } from '../types';
+import type ApiErrorResponse from '../types/responce/errorRes';
 
-const API_URL = 'https://test.sheeplab.net/api';
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface TeamProps {
-  token: string;
-  userId: string;
+  readonly token: string;
+  readonly userId: string;
 }
 
-export default function TeamPage({ token, userId }: TeamProps) {
+export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
 
   // 状態管理
@@ -52,7 +53,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setErrorMsg(null);
     try {
       const res = await axios.get<Team>(`${API_URL}/teams/my`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${props.token}` },
       });
       setTeam(res.data);
     } catch (error) {
@@ -64,7 +65,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [props.token]);
 
   useEffect(() => {
     fetchTeamData();
@@ -75,7 +76,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     if (!createName) return;
     try {
       await axios.post<Team>(`${API_URL}/teams`, { name: createName } as CreateTeamRequest, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${props.token}` },
       });
       alert('チームを作成しました！');
       fetchTeamData();
@@ -92,7 +93,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
         `${API_URL}/teams/join`,
         { invite_code: joinCode } as JoinTeamRequest,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${props.token}` },
         },
       );
       alert('チームに参加しました！');
@@ -107,7 +108,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     let msg = defaultMsg;
     if (axios.isAxiosError(error) && error.response) {
       const data = error.response.data as ApiErrorResponse;
-      if (data && data.message) msg = data.message;
+      if (data?.message) msg = data.message;
     }
     setErrorMsg(msg);
   };
@@ -326,13 +327,16 @@ export default function TeamPage({ token, userId }: TeamProps) {
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
-                          sx={{ bgcolor: member.user_id === userId ? '#667eea' : '#e0e0e0', mr: 2 }}
+                          sx={{
+                            bgcolor: member.user_id === props.userId ? '#667eea' : '#e0e0e0',
+                            mr: 2,
+                          }}
                         >
                           {member.display_name.charAt(0)}
                         </Avatar>
                         <Box>
                           <Typography variant="subtitle1" fontWeight="bold">
-                            {member.display_name} {member.user_id === userId && '(あなた)'}
+                            {member.display_name} {member.user_id === props.userId && '(あなた)'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {member.last_updated

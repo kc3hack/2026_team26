@@ -29,10 +29,10 @@ const theme = createTheme({
 });
 
 interface MenuProps {
-  logout: () => void;
+  readonly logout: () => void;
 }
 
-export default function Menu({ logout }: MenuProps) {
+export default function Menu(props: MenuProps) {
   const navigate = useNavigate();
 
   const menuItems = [
@@ -68,7 +68,7 @@ export default function Menu({ logout }: MenuProps) {
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             疲労モニタリングアプリ
           </Typography>
-          <Button color="inherit" onClick={logout} startIcon={<LogoutIcon />}>
+          <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
             ログアウト
           </Button>
         </Toolbar>
