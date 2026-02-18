@@ -35,5 +35,5 @@ jobs:
             fi
             # ensure working tree is up-to-date
             git pull --ff-only || true
-            docker compose build backend
-            docker compose up -d --no-deps --build backend
+            docker compose build backend frontend
+            docker compose up -d --no-deps --build backend frontend
