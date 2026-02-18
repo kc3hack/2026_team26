@@ -39,6 +39,12 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
+// RefreshResponse is returned after refreshing access token
+type RefreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+}
+
 // RefreshTokenRecord represents the DB record for refresh tokens
 type RefreshTokenRecord struct {
 	ID         string     `json:"id" db:"id"`
