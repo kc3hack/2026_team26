@@ -1,4 +1,4 @@
-import axios from 'axios'; // 追加
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
@@ -8,6 +8,8 @@ import Measure from './pages/Measure';
 import Menu from './pages/Menu';
 import Register from './pages/Register';
 import TeamPage from './pages/Team';
+// ▼▼▼ 型定義をインポート (LogoutRequestを追加) ▼▼▼
+import type { LogoutRequest } from './types';
 
 const API_URL = 'https://test.sheeplab.net/api'; // 環境に合わせて変更してください
 
@@ -16,7 +18,7 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
   const [refreshToken, setRefreshToken] = useState<string | null>(
     localStorage.getItem('refresh_token'),
-  ); // 追加
+  );
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('user_id'));
 
   // トークン保存処理
@@ -25,7 +27,7 @@ function App() {
     else localStorage.removeItem('auth_token');
   }, [token]);
 
-  // リフレッシュトークン保存処理 (追加)
+  // リフレッシュトークン保存処理
   useEffect(() => {
     if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
     else localStorage.removeItem('refresh_token');
@@ -36,14 +38,15 @@ function App() {
     else localStorage.removeItem('user_id');
   }, [userId]);
 
-  // ▼▼▼ ログアウト処理の修正 ▼▼▼
   const logout = async () => {
     try {
       // サーバーにログアウト通知を送る (refresh_tokenを送付)
       if (refreshToken) {
-        await axios.post(`${API_URL}/auth/logout`, {
+        const req: LogoutRequest = {
           refresh_token: refreshToken,
-        });
+        };
+
+        await axios.post(`${API_URL}/auth/logout`, req);
       }
     } catch (error) {
       console.error('ログアウトAPIの呼び出しに失敗しましたが、ローカルデータは削除します', error);
