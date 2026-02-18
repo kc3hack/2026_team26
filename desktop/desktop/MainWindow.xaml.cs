@@ -37,7 +37,11 @@ namespace desktop
             if (source != null)
             {
                 // XAMLに書いた <Image x:Name="imageDisplay" /> に表示
-                imageDisplay.Source = source;
+                // カメラ更新（既存コード）
+                imageDisplay.Source = _camera.GetFrameSource();
+
+                // マイクの音量をバーに反映
+                volumeBar.Value = _audio.CurrentVolume;
             }
         }
 
