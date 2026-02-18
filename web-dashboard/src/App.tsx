@@ -33,20 +33,14 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* トークンがあればダッシュボード、なければログイン画面へ */}
-        <Route
-          path="/"
-          element={
-            token ? (
-              <Dashboard token={token} logout={logout} userId={userId} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
+        <Route 
+          path="/" 
+          element={token ? <Dashboard token={token} logout={logout} userId={userId} /> : <Navigate to="/login" />} 
         />
-
+        
         {/* ログイン画面 */}
         <Route path="/login" element={<Login setToken={setToken} setUserId={setUserId} />} />
-
+        
         {/* 新規登録画面 */}
         <Route path="/register" element={<Register setUserId={setUserId} />} />
       </Routes>
