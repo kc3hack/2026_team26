@@ -17,7 +17,8 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ApiErrorResponse, AuthResponse } from '../types';
+// ▼▼▼ SigninRequest を追加 ▼▼▼
+import type { ApiErrorResponse, AuthResponse, SigninRequest } from '../types';
 
 const API_URL = 'https://test.sheeplab.net/api';
 
@@ -34,10 +35,9 @@ const theme = createTheme({
   shape: { borderRadius: 16 },
 });
 
-// Propsの定義を更新
 interface LoginProps {
   setToken: (_token: string) => void;
-  setRefreshToken: (_refreshToken: string) => void; // 追加
+  setRefreshToken: (_refreshToken: string) => void;
   setUserId: (_userId: string) => void;
 }
 
@@ -54,9 +54,15 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
     setErrorMsg(null);
 
     try {
-      const res = await axios.post<AuthResponse>(`${API_URL}/auth/signin`, { email, password });
+      const req: SigninRequest = {
+        email,
+        password,
+      };
+
+      const res = await axios.post<AuthResponse>(`${API_URL}/auth/signin`, req);
+
       setToken(res.data.access_token);
-      setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
+      setRefreshToken(res.data.refresh_token || '');
       setUserId(res.data.user.id);
       navigate('/');
     } catch (error) {
@@ -83,30 +89,27 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: '#f0f2f5',
-          p: { xs: 2, md: 4 }, // スマホとPCで余白を変える
+          p: { xs: 2, md: 4 },
         }}
       >
         <Paper
           elevation={12}
           sx={{
             display: 'flex',
-            // 【修正】PCフルサイズ対応: 幅を広げ、高さを増やす
             maxWidth: 'xl',
             width: '100%',
-            // スマホは中身に合わせて伸縮(auto)、PCは固定高さ(700px)で迫力を出す
             minHeight: { xs: 'auto', md: '80vh' },
             overflow: 'hidden',
-            flexDirection: { xs: 'column', md: 'row' }, // スマホは縦並び、PCは横並び
+            flexDirection: { xs: 'column', md: 'row' },
           }}
         >
-          {/* 左側：ビジュアルエリア (スマホでは非表示) */}
+          {/* 左側：ビジュアルエリア */}
           <Grid
             container
             sx={{
-              // 【修正】PCの大画面では画像エリアを広め(55-60%)にとる
               width: { xs: '100%', md: '55%', lg: '60%' },
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: { xs: 'none', md: 'flex' }, // スマホでは隠す
+              display: { xs: 'none', md: 'flex' },
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
@@ -115,7 +118,6 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
               position: 'relative',
             }}
           >
-            {/* 装飾用の円 (薄く背景に入れる) */}
             <Box
               sx={{
                 position: 'absolute',
@@ -141,7 +143,7 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
 
             <MonitorHeartIcon sx={{ fontSize: { md: 100, lg: 120 }, mb: 3, opacity: 0.9 }} />
             <Typography
-              variant="h3" // 文字サイズを大きく
+              variant="h3"
               component="div"
               sx={{ mb: 2, textShadow: '0 2px 4px rgba(0,0,0,0.2)', fontWeight: 800 }}
             >
@@ -157,13 +159,12 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
           {/* 右側：入力フォームエリア */}
           <Box
             sx={{
-              // 【修正】残りの幅を使う
               width: { xs: '100%', md: '45%', lg: '40%' },
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              p: { xs: 4, md: 6, lg: 8 }, // PCでは内側の余白をたっぷりとる
+              p: { xs: 4, md: 6, lg: 8 },
             }}
           >
             <Avatar sx={{ m: 1, bgcolor: '#667eea', width: 56, height: 56 }}>
@@ -192,7 +193,6 @@ export default function Login({ setToken, setRefreshToken, setUserId }: LoginPro
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                // PCで見やすいように入力欄の高さを調整
                 InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
                 InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />

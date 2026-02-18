@@ -75,3 +75,8 @@ export interface JoinTeamRequest {
 export interface LogoutRequest {
   refresh_token: string;
 }
+
+export interface SigninRequest {
+  email: string;
+  password: string;
+}
