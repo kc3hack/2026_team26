@@ -9,69 +9,63 @@ import (
 	"github.com/team26/backend/internal/service"
 )
 
+func strToTime(stringTime string, defaultTime time.Time) (time.Time, error) {
+	if stringTime == "" {
+		return defaultTime, nil
+	}
+	res, err := time.Parse(time.RFC3339, stringTime)
+	return res, err
+}
+
+func setNum(nstr string, defaultInt int) (int, error) {
+	if nstr == "" {
+		return defaultInt, nil
+	}
+	res, err := strconv.Atoi(nstr)
+	return res, err
+}
+
 func makeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        q := r.URL.Query()
-        uid := q.Get("u")
-        f := q.Get("f")
-        t := q.Get("t")
-				nstr := q.Get("n")
-        // parse optional limit 'n'
-        maxNum := 60 * 24 // 1日分
-        var fromT time.Time
-        var toT time.Time
-        if uid == "" {
-            writeErrorJSON(w, http.StatusBadRequest, "u required")
-            return
-        }
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		uid := q.Get("u")
+		f := q.Get("f")
+		t := q.Get("t")
+		nstr := q.Get("n")
 
-        if nstr != "" {
-            var err error
-            maxNum, err = strconv.Atoi(nstr)
-            if err != nil {
-                writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
-                return
-            }
-        }
+		if uid == "" {
+			writeErrorJSON(w, http.StatusBadRequest, "u required")
+			return
+		}
 
-				if f != "" && t != "" && nstr != "" {
-					writeErrorJSON(w, http.StatusBadRequest, "It is not permitted to list all of n, f, and t")
-					return
-				}
+		maxNum, err := setNum(nstr, 60*24)
+		if err != nil {
+			writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
+			return
+		}
 
-        if f == "" {
-          // default from = Unix epoch (1970-01-01T00:00:00Z)
-          fromT = time.Unix(0, 0).UTC()
-        } else {
-          var err error
-          fromT, err = time.Parse(time.RFC3339, f)
-          if err != nil {
-            writeErrorJSON(w, http.StatusBadRequest, "invalid param f")
-            return
-          }
-        }
+		if f != "" && t != "" && nstr != "" {
+			writeErrorJSON(w, http.StatusBadRequest, "It is not permitted to list all of n, f, and t")
+			return
+		}
 
-        if t == "" {
-          toT = time.Now().UTC()
-        } else {
-          var err error
-          toT, err = time.Parse(time.RFC3339, t)
-          if err != nil {
-            writeErrorJSON(w, http.StatusBadRequest, "invalid param t")
-            return
-          }
-        }
+		fromT, err := strToTime(f, time.Unix(0, 0).UTC())
+		if err != nil {
+			writeErrorJSON(w, http.StatusBadRequest, "invalid f: must be RFC3339 as string")
+		}
 
-        list, err := svc.List(uid, fromT, toT, maxNum)
-        if err != nil {
-            writeErrorJSON(w, http.StatusInternalServerError, "failed")
-            return
-        }
-        // apply limit if requested
-        if nstr != "" && maxNum > 0 && len(list) > maxNum {
-          list = list[:maxNum]
-        }
-        w.Header().Set("Content-Type", contentTypeJSON)
-        json.NewEncoder(w).Encode(list)
-    }
+		toT, err := strToTime(t, time.Now().UTC())
+		if err != nil {
+			writeErrorJSON(w, http.StatusBadRequest, "invalid t: must be RFC3339 as string")
+		}
+
+		list, err := svc.List(uid, fromT, toT, maxNum)
+		if err != nil {
+			writeErrorJSON(w, http.StatusInternalServerError, "failed")
+			return
+		}
+
+		w.Header().Set("Content-Type", contentTypeJSON)
+		json.NewEncoder(w).Encode(list)
+	}
 }
