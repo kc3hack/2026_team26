@@ -11,7 +11,7 @@ import TeamPage from './pages/Team';
 // ▼▼▼ 型定義をインポート (LogoutRequestを追加) ▼▼▼
 import type { LogoutRequest } from './types';
 
-const API_URL = 'https://test.sheeplab.net/api'; // 環境に合わせて変更してください
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 function App() {
   // トークン管理 (access_token と refresh_token 両方を保存)

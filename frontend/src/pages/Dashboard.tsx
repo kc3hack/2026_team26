@@ -77,7 +77,7 @@ export default function Dashboard(props: DashboardProps) {
       setData(formattedData);
 
       if (formattedData.length > 0) {
-        const latest = formattedData.at(formattedData.length - 1 || 0)!;
+        const latest = formattedData.at(-1)!;
         // face_scoreに基づいた判定
         if (latest.face_score <= 30) {
           setCurrentStatus({ label: '危険 (休憩してください)', color: 'error' });

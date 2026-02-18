@@ -17,6 +17,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type SigninReq from '../types/request/signinReq';
 import type ApiErrorResponse from '../types/responce/errorRes';
 import type SigninRes from '../types/responce/signinRes';
 
@@ -54,7 +55,8 @@ export default function Login(props: LoginProps) {
     setErrorMsg(null);
 
     try {
-      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, { email, password });
+      const body: SigninReq = { email, password };
+      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, body);
       props.setToken(res.data.access_token);
       props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
       props.setUserId(res.data.user.id);

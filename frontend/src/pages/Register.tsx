@@ -68,12 +68,11 @@ export default function Register(props: RegisterProps) {
     };
     try {
       const res = await axios.post<SignupRes>(`${API_URL}/auth/signup`, req);
-      if (res.status !== 200) throw new Error('APIエラー: ' + res.statusText);
       const data = res.data;
       props.setAccessToken(data.access_token);
       props.setRefreshToken(data.refresh_token || '');
       props.setUserId(data.user.id);
-      alert('登録完了！ログイン画面へ移動します。');
+      alert('登録完了！メインメニューへ移動します。');
       navigate('/login');
     } catch (error) {
       console.error('登録エラー:', error);

@@ -75,7 +75,8 @@ export default function TeamPage(props: TeamProps) {
   const handleCreateTeam = async () => {
     if (!createName) return;
     try {
-      await axios.post<Team>(`${API_URL}/teams`, { name: createName } as CreateTeamRequest, {
+      const body: CreateTeamRequest = { name: createName };
+      await axios.post<Team>(`${API_URL}/teams`, body, {
         headers: { Authorization: `Bearer ${props.token}` },
       });
       alert('チームを作成しました！');
@@ -89,9 +90,10 @@ export default function TeamPage(props: TeamProps) {
   const handleJoinTeam = async () => {
     if (!joinCode) return;
     try {
+      const body: JoinTeamRequest = { invite_code: joinCode };
       await axios.post<Team>(
         `${API_URL}/teams/join`,
-        { invite_code: joinCode } as JoinTeamRequest,
+        body,
         {
           headers: { Authorization: `Bearer ${props.token}` },
         },
