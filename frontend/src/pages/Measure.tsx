@@ -1,0 +1,268 @@
+import {
+  ArrowBack as ArrowBackIcon,
+  Stop as StopIcon,
+  Videocam as VideocamIcon,
+} from '@mui/icons-material';
+import {
+  AppBar,
+  Box,
+  Button,
+  Chip,
+  Container,
+  IconButton,
+  Paper,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import axios from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { FatigueCreateRequest, FatigueCreateResponse } from '../types';
+
+const API_URL = 'https://test.sheeplab.net/api';
+
+// 仮のゲームID
+const DUMMY_GAME_ID = '00000000-0000-0000-0000-000000000000';
+
+interface MeasureProps {
+  token: string | null;
+  userId: string | null;
+}
+
+export default function Measure({ token, userId }: MeasureProps) {
+  const navigate = useNavigate();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [latestScore, setLatestScore] = useState<{ face: number; voice: number } | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  // ▼ カメラを起動する関数
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('カメラの起動に失敗しました:', err);
+      alert('カメラを使用できません。ブラウザの許可設定を確認してください。');
+    }
+  };
+
+  // ▼ カメラを停止する関数
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  // ▼ 測定とデータ送信を行う関数
+  const measureAndSend = useCallback(async () => {
+    if (!token || !userId) return;
+
+    const dummyFaceScore = Math.floor(Math.random() * 100);
+    const dummyVoiceScore = Math.floor(Math.random() * 100);
+
+    setLatestScore({ face: dummyFaceScore, voice: dummyVoiceScore });
+
+    try {
+      const payload: FatigueCreateRequest = {
+        user_id: userId,
+        game_id: DUMMY_GAME_ID,
+        face_score: dummyFaceScore,
+        voice_score: dummyVoiceScore,
+        recorded_at: new Date().toISOString(),
+      };
+
+      await axios.post<FatigueCreateResponse>(`${API_URL}/fatigue`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const time = new Date().toLocaleTimeString();
+      setLogs((prev) => [
+        `[${time}] 送信成功: 顔${dummyFaceScore} / 声${dummyVoiceScore}`,
+        ...prev.slice(0, 4),
+      ]);
+    } catch (error) {
+      console.error('送信エラー:', error);
+      setLogs((prev) => ['送信失敗...', ...prev.slice(0, 4)]);
+    }
+  }, [token, userId]);
+
+  // ▼ 録画状態の管理
+  useEffect(() => {
+    let intervalId: number;
+
+    if (isRecording) {
+      startCamera();
+      measureAndSend();
+      intervalId = setInterval(measureAndSend, 5000) as unknown as number;
+    } else {
+      stopCamera();
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      stopCamera();
+    };
+  }, [isRecording, measureAndSend]);
+
+  return (
+    <Box
+      sx={{
+        flexGrow: 1,
+        height: '100vh',
+        bgcolor: '#282c34',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* ヘッダー */}
+      <AppBar position="static" color="transparent" elevation={0}>
+        <Toolbar>
+          <IconButton edge="start" color="inherit" onClick={() => navigate('/')} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            疲労測定モード
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      {/* 【修正】maxWidth="xl" に拡張して大画面対応 */}
+      <Container
+        maxWidth="xl"
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 2,
+        }}
+      >
+        {/* カメラ映像エリア */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '1200px', // 【修正】640px -> 1200px に拡大（PCで大きく表示）
+            aspectRatio: '16/9',
+            bgcolor: 'black',
+            borderRadius: 4,
+            overflow: 'hidden',
+            mb: 3,
+            boxShadow: isRecording ? '0 0 20px #f44336' : '0 0 10px rgba(0,0,0,0.5)',
+            transition: '0.3s',
+          }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: isRecording ? 1 : 0.3,
+            }}
+          />
+
+          {/* 録画中のインジケータ */}
+          {!isRecording && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="h6" color="grey.500">
+                待機中...
+              </Typography>
+            </Box>
+          )}
+          {isRecording && (
+            <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+              <Chip label="LIVE REC" color="error" size="small" />
+            </Box>
+          )}
+        </Box>
+
+        {/* スコア表示 */}
+        {latestScore && (
+          // 【修正】映像に合わせて幅を少し広げる (600->800)
+          <Box
+            sx={{
+              mb: 4,
+              maxWidth: 800,
+              width: '100%',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 2,
+            }}
+          >
+            <Paper
+              sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
+            >
+              <Typography variant="caption">現在の顔スコア</Typography>
+              <Typography
+                variant="h3"
+                color={latestScore.face < 30 ? 'error.main' : 'success.main'}
+                sx={{ fontWeight: 'bold' }}
+              >
+                {latestScore.face}
+              </Typography>
+            </Paper>
+            <Paper
+              sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
+            >
+              <Typography variant="caption">現在の声スコア</Typography>
+              <Typography variant="h3" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                {latestScore.voice}
+              </Typography>
+            </Paper>
+          </Box>
+        )}
+
+        {/* 操作ボタン */}
+        <Button
+          variant="contained"
+          color={isRecording ? 'error' : 'primary'}
+          size="large"
+          startIcon={isRecording ? <StopIcon /> : <VideocamIcon />}
+          onClick={() => setIsRecording(!isRecording)}
+          sx={{
+            borderRadius: 50,
+            px: 6,
+            py: 2,
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          }}
+        >
+          {isRecording ? '測定を停止' : '測定を開始'}
+        </Button>
+
+        {/* 送信ログ */}
+        <Box sx={{ mt: 4, width: '100%', maxWidth: 500 }}>
+          {logs.map((log, i) => (
+            <Typography key={i} variant="caption" display="block" color="grey.500" align="center">
+              {log}
+            </Typography>
+          ))}
+        </Box>
+      </Container>
+    </Box>
+  );
+}

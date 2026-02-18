@@ -100,7 +100,16 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
   }, [fetchData]);
 
   return (
-    <Box sx={{ flexGrow: 1, height: '100vh', bgcolor: '#f5f5f5' }}>
+    // 【修正】height: '100vh' と flex レイアウトで画面いっぱいに広げる
+    <Box
+      sx={{
+        flexGrow: 1,
+        height: '100vh',
+        bgcolor: '#f5f5f5',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
@@ -115,7 +124,11 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      {/* 【修正】maxWidth="xl" に変更し、flexGrow: 1 で下まで伸ばす */}
+      <Container
+        maxWidth="xl"
+        sx={{ mt: 4, mb: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}
+      >
         <Box mb={4}>
           <Card>
             <CardContent
@@ -131,11 +144,16 @@ export default function Dashboard({ token, logout, userId }: DashboardProps) {
           </Card>
         </Box>
 
-        <Paper elevation={3} sx={{ p: 3, height: 500 }}>
+        {/* 【修正】高さを固定せず、flexGrow: 1 で画面の残り領域いっぱいまで広げる */}
+        <Paper
+          elevation={3}
+          sx={{ p: 3, flexGrow: 1, minHeight: 400, display: 'flex', flexDirection: 'column' }}
+        >
           <Typography variant="h6" gutterBottom>
             モニタリング推移
           </Typography>
-          <ResponsiveContainer width="100%" height="90%">
+          {/* 親要素に高さ(flexGrow)があるので、height="100%" が効くようになる */}
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="time" />
