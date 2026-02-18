@@ -93,16 +93,14 @@ ER 図は [backend/er.mmd](er.mmd) を参照。
 - `internal/db`: DB 接続、マイグレーション
   - `internal/db/conn.go`: `*sql.DB` の初期化
   - `internal/db/migrate.go`: マイグレーション実行
-- `internal/http`: ルーティングとハンドラ
-  - `internal/http/router.go`: ルーティング定義
-  - `internal/http/handler/auth.go`: `/auth/*` ハンドラ
-  - `internal/http/handler/fatigue.go`: `/fatigue` ハンドラ
-  - `internal/http/handler/ws.go`: `/ws/fatigue` ハンドラ
-  - `internal/http/middleware`: ログ、リカバリ、認証
-    - `internal/http/middleware/auth.go`: 認証チェック
-  - `internal/http/response`: 共通レスポンス
-    - `internal/http/response/error.go`: エラーレスポンス
-    - `internal/http/response/json.go`: JSON レスポンス
+- `internal/httpserver`: ルーティングとハンドラ
+  - `internal/httpserver/router.go`: ルート登録（`RegisterGet` / `RegisterPost` ヘルパーを利用）
+  - `internal/httpserver/handlers.go`: 汎用ハンドラおよび JSON エラー出力ヘルパー
+  - `internal/httpserver/postFatigue.go`: `POST /fatigue` 用ラッパー（リクエストデコードとサービス呼び出し）
+  - `internal/httpserver/getFatigue.go`: `GET /fatigue` 用ラッパー（クエリ検証とサービス呼び出し）
+  - `internal/httpserver/postSignup.go`: `POST /auth/signup` 用ラッパー
+  - `internal/httpserver/postSignin.go`: `POST /auth/signin` 用ラッパー
+  - `internal/ws` (ハブ/接続管理は `internal/ws` 側にあり、WS ハンドラは `handlers.go` にて登録)
 - `internal/model`: API / DB モデル
   - `internal/model/user.go`: `User`
   - `internal/model/fatigue.go`: `FatigueLog`

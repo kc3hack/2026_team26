@@ -1,0 +1,39 @@
+name: deploy backend to development server
+
+on:
+  push:
+    branches: ["deploy/**"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /root/shared/dev/kc3/2026_team26
+            # fetch latest refs and checkout the pushed branch (github.ref_name)
+            git fetch --all --prune
+            BRANCH="${{ github.ref_name }}"
+            # create/update local branch from origin if necessary
+            if git show-ref --verify --quiet refs/heads/"$BRANCH"; then
+              git checkout "$BRANCH"
+              git reset --hard "origin/$BRANCH"
+            else
+              git checkout -B "$BRANCH" "origin/$BRANCH"
+            fi
+            # ensure working tree is up-to-date
+            git pull --ff-only || true
+            docker compose build backend
+            docker compose up -d --no-deps --build backend
