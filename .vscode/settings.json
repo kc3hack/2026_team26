@@ -24,5 +24,8 @@
     "typescript": "typescript",
     "typescriptreact": "typescriptreact",
     "javascriptreact": "javascriptreact"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
   }
 }

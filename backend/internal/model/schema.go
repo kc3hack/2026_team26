@@ -18,7 +18,7 @@ type User struct {
 type SignupRequest struct {
 	Email       string `json:"email" validate:"required,email"`
 	Password    string `json:"password" validate:"required"`
-	DisplayName string `json:"display_name,omitempty"`
+	DisplayName string `json:"display_name" validate:"required"`
 }
 
 // SigninRequest is used for /auth/signin
@@ -29,7 +29,7 @@ type SigninRequest struct {
 
 // AuthResponse contains user info (and optional token).
 type AuthResponse struct {
-	User  User   `json:"user"`
+	User         User   `json:"user"`
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
@@ -58,7 +58,7 @@ type LogoutRequest struct {
 // FatigueCreateRequest is the payload for POST /fatigue
 type FatigueCreateRequest struct {
 	UserID     string     `json:"user_id" db:"user_id" validate:"required,uuid"`
-	GameID     string     `json:"game_id" db:"game_id" validate:"required,uuid"`
+	GameID     *string    `json:"game_id,omitempty" db:"game_id"`
 	FaceScore  int        `json:"face_score" db:"face_score" validate:"gte=0,lte=125"`
 	VoiceScore int        `json:"voice_score" db:"voice_score" validate:"gte=0,lte=125"`
 	RecordedAt *time.Time `json:"recorded_at,omitempty" db:"recorded_at"`
@@ -73,7 +73,7 @@ type FatigueCreateResponse struct {
 type FatigueLog struct {
 	ID         string    `json:"id" db:"id"`
 	UserID     string    `json:"user_id" db:"user_id"`
-	GameID     string    `json:"game_id" db:"game_id"`
+	GameID     *string   `json:"game_id,omitempty" db:"game_id"`
 	FaceScore  int       `json:"face_score" db:"face_score"`
 	VoiceScore int       `json:"voice_score" db:"voice_score"`
 	RecordedAt time.Time `json:"recorded_at" db:"recorded_at"`
@@ -84,4 +84,9 @@ type Game struct {
 	ID      string `json:"id" db:"id"`
 	Name    string `json:"name" db:"name"`
 	Process string `json:"process" db:"process"`
+}
+
+type UpdateResponse struct {
+	Current string   `json:"current" db:"current"`
+	Support []string `json:"support" db:"support"`
 }
