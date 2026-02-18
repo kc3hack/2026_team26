@@ -43,20 +43,21 @@ func makeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 			writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
 			return
 		}
-
-		if f != "" && t != "" && nstr != "" {
-			writeErrorJSON(w, http.StatusBadRequest, "It is not permitted to list all of n, f, and t")
+		if maxNum < 1 {
+			writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be >= 1")
 			return
 		}
 
 		fromT, err := strToTime(f, time.Unix(0, 0).UTC())
 		if err != nil {
 			writeErrorJSON(w, http.StatusBadRequest, "invalid f: must be RFC3339 as string")
+			return
 		}
 
 		toT, err := strToTime(t, time.Now().UTC())
 		if err != nil {
 			writeErrorJSON(w, http.StatusBadRequest, "invalid t: must be RFC3339 as string")
+			return
 		}
 
 		list, err := svc.List(uid, fromT, toT, maxNum)

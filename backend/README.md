@@ -95,13 +95,12 @@ ER 図は [backend/er.mmd](er.mmd) を参照。
   - `internal/db/migrate.go`: マイグレーション実行
 - `internal/httpserver`: ルーティングとハンドラ
   - `internal/httpserver/router.go`: ルート登録（`RegisterGet` / `RegisterPost` ヘルパーを利用）
-  - `internal/httpserver/api.go`: ルート登録ヘルパーと `APIError`（クエリ/ボディ検証と統一エラーレスポンスを提供）
   - `internal/httpserver/handlers.go`: 汎用ハンドラおよび JSON エラー出力ヘルパー
   - `internal/httpserver/postFatigue.go`: `POST /fatigue` 用ラッパー（リクエストデコードとサービス呼び出し）
   - `internal/httpserver/getFatigue.go`: `GET /fatigue` 用ラッパー（クエリ検証とサービス呼び出し）
   - `internal/httpserver/postSignup.go`: `POST /auth/signup` 用ラッパー
   - `internal/httpserver/postSignin.go`: `POST /auth/signin` 用ラッパー
-  - `internal/httpserver/ws` (ハブ/接続管理は `internal/ws` 側にあり、WS ハンドラは `handlers.go` にて登録)
+  - `internal/ws` (ハブ/接続管理は `internal/ws` 側にあり、WS ハンドラは `handlers.go` にて登録)
 - `internal/model`: API / DB モデル
   - `internal/model/user.go`: `User`
   - `internal/model/fatigue.go`: `FatigueLog`

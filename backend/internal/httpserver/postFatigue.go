@@ -10,11 +10,25 @@ import (
 	"github.com/team26/backend/internal/service"
 )
 
+func isAllowingValues(value int) bool {
+	if value < 0 {
+		return false
+	}
+	if value > 125 {
+		return false
+	}
+	return true
+}
+
 func makeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req model.FatigueCreateRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			writeErrorJSON(w, http.StatusBadRequest, invalidPayload)
+			return
+		}
+		if _, err := uuid.Parse(req.UserID); err != nil {
+			writeErrorJSON(w, http.StatusBadRequest, "invalid user_id")
 			return
 		}
 		// validate optional game_id if provided
@@ -24,7 +38,7 @@ func makeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 				return
 			}
 		}
-		if req.FaceScore < 0 || req.VoiceScore < 0 {
+		if !isAllowingValues(req.FaceScore) || !isAllowingValues(req.VoiceScore) {
 			writeErrorJSON(w, http.StatusBadRequest, "scores must be >=0")
 			return
 		}
