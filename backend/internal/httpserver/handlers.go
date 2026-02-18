@@ -15,20 +15,29 @@ const (
     contentTypeJSON = "application/json"
 )
 
+// writeErrorJSON writes a JSON error response with the given HTTP status
+// and message in the shape { "errorMessage": "..." }.
+func writeErrorJSON(w http.ResponseWriter, status int, msg string) {
+    w.Header().Set("Content-Type", contentTypeJSON)
+    w.WriteHeader(status)
+    _ = json.NewEncoder(w).Encode(struct {
+        ErrorMessage string `json:"errorMessage"`
+    }{ErrorMessage: msg})
+}
 func makeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req model.FatigueCreateRequest
         if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, invalidPayload, http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, invalidPayload)
             return
         }
         if req.FaceScore < 0 || req.VoiceScore < 0 {
-            http.Error(w, "scores must be >=0", http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, "scores must be >=0")
             return
         }
         resp, err := svc.Create(&req)
         if err != nil {
-            http.Error(w, "failed", http.StatusInternalServerError)
+            writeErrorJSON(w, http.StatusInternalServerError, "failed")
             return
         }
         w.Header().Set("Content-Type", contentTypeJSON)
@@ -43,22 +52,22 @@ func makeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
         from := q.Get("f")
         to := q.Get("t")
         if uid == "" || from == "" || to == "" {
-            http.Error(w, "u,f,t required", http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, "u,f,t required")
             return
         }
         fromT, err := time.Parse(time.RFC3339, from)
         if err != nil {
-            http.Error(w, "invalid from", http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, "invalid from")
             return
         }
         toT, err := time.Parse(time.RFC3339, to)
         if err != nil {
-            http.Error(w, "invalid to", http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, "invalid to")
             return
         }
         list, err := svc.List(uid, fromT, toT)
         if err != nil {
-            http.Error(w, "failed", http.StatusInternalServerError)
+            writeErrorJSON(w, http.StatusInternalServerError, "failed")
             return
         }
         w.Header().Set("Content-Type", contentTypeJSON)
@@ -76,12 +85,12 @@ func makeSignupHandler(svc *service.AuthService) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req model.SignupRequest
         if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, invalidPayload, http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, invalidPayload)
             return
         }
         resp, err := svc.Signup(&req)
         if err != nil {
-            http.Error(w, "failed", http.StatusInternalServerError)
+            writeErrorJSON(w, http.StatusInternalServerError, "failed")
             return
         }
         w.Header().Set("Content-Type", contentTypeJSON)
@@ -93,12 +102,12 @@ func makeSigninHandler(svc *service.AuthService) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req model.SigninRequest
         if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, invalidPayload, http.StatusBadRequest)
+            writeErrorJSON(w, http.StatusBadRequest, invalidPayload)
             return
         }
         authResp, refreshRaw, err := svc.Signin(&req)
         if err != nil {
-            http.Error(w, "unauthorized", http.StatusUnauthorized)
+            writeErrorJSON(w, http.StatusUnauthorized, "unauthorized")
             return
         }
         // attach refresh token in response for client
