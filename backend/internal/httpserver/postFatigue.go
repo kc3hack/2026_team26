@@ -39,7 +39,7 @@ func makeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 			}
 		}
 		if !isAllowingValues(req.FaceScore) || !isAllowingValues(req.VoiceScore) {
-			writeErrorJSON(w, http.StatusBadRequest, "scores must be >=0")
+			writeErrorJSON(w, http.StatusBadRequest, "scores must be between 0 and 125")
 			return
 		}
 		resp, err := svc.Create(&req)

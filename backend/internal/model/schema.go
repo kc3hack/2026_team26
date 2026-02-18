@@ -18,7 +18,7 @@ type User struct {
 type SignupRequest struct {
 	Email       string `json:"email" validate:"required,email"`
 	Password    string `json:"password" validate:"required"`
-	DisplayName string `json:"display_name,omitempty"`
+	DisplayName string `json:"display_name" validate:"required"`
 }
 
 // SigninRequest is used for /auth/signin

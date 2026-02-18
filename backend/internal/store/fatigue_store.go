@@ -30,7 +30,7 @@ func (s *FatigueStore) Create(f *model.FatigueLog) error {
 }
 
 func (s *FatigueStore) ListByUserRange(userID string, from, to time.Time, maxNum int) ([]model.FatigueLog, error) {
-	rows, err := s.DB.Query(`SELECT id,user_id,game_id,face_score,voice_score,recorded_at FROM fatigue_logs WHERE user_id=$1 AND recorded_at >= $2 AND recorded_at <= $3 ORDER BY recorded_at DESC limit $4`, userID, from, to, maxNum)
+	rows, err := s.DB.Query(`SELECT id,user_id,game_id,face_score,voice_score,recorded_at FROM fatigue_logs WHERE user_id=$1 AND recorded_at >= $2 AND recorded_at <= $3 ORDER BY recorded_at DESC LIMIT $4`, userID, from, to, maxNum)
 	if err != nil {
 		return nil, err
 	}
