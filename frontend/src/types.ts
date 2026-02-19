@@ -32,7 +32,7 @@ export interface ApiErrorResponse {
 
 export interface FatigueCreateRequest {
   user_id: string;
-  game_id: string;
+  game_id?: string | null;
   face_score: number;
   voice_score: number;
   recorded_at: string;
