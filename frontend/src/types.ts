@@ -1,6 +1,82 @@
-// --- チーム機能用の型定義 ---
+// ==========================================
+// 共通エラーレスポンス
+// ==========================================
+export interface ApiErrorResponse {
+  message: string;
+  error?: string;
+}
 
-// チームメンバーの情報
+// ==========================================
+// ユーザー・認証関連 (Auth)
+// ==========================================
+export interface User {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string;
+}
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+  display_name: string;
+}
+
+export interface SigninRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface RefreshRequest {
+  refresh_token: string;
+}
+
+export interface RefreshResponse {
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface LogoutRequest {
+  refresh_token: string;
+}
+
+// ==========================================
+// 疲労モニタリング関連 (Fatigue)
+// ==========================================
+export interface FatigueLog {
+  id: string;
+  user_id: string;
+  game_id: string | null;
+  face_score: number;
+  voice_score: number;
+  recorded_at: string;
+}
+
+export interface FatigueListResponse {
+  items: FatigueLog[];
+}
+
+export interface FatigueCreateRequest {
+  user_id: string;
+  game_id?: string | null;
+  face_score: number;
+  voice_score: number;
+  recorded_at: string;
+}
+
+export interface FatigueCreateResponse {
+  id: string;
+}
+
+// ==========================================
+// チーム機能関連 (Team)
+// ==========================================
 export interface TeamMember {
   user_id: string;
   display_name: string;
@@ -9,7 +85,6 @@ export interface TeamMember {
   last_updated?: string;
 }
 
-// チーム自体の情報
 export interface Team {
   id: string;
   name: string;
@@ -17,22 +92,10 @@ export interface Team {
   members: TeamMember[];
 }
 
-// チーム作成時のリクエスト
 export interface CreateTeamRequest {
   name: string;
 }
 
-// チーム参加時のリクエスト
 export interface JoinTeamRequest {
   invite_code: string;
-}
-
-// ログアウトを追加
-export interface LogoutRequest {
-  refresh_token: string;
-}
-
-export interface SigninRequest {
-  email: string;
-  password: string;
 }

@@ -1,41 +1,34 @@
-import {
-  ArrowBack as ArrowBackIcon,
-  Stop as StopIcon,
-  Videocam as VideocamIcon,
-} from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Stop as StopIcon, Videocam as VideocamIcon } from '@mui/icons-material';
 import {
   AppBar,
-  Box,
-  Button,
+  Box, Button,
   Chip,
   Container,
   IconButton,
   Paper,
   Toolbar,
-  Typography,
+  Typography
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type FatigueCreateReq from '../types/request/fatigueCreateReq';
-import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
+import type { FatigueCreateRequest, FatigueCreateResponse } from '../types';
 
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
+const API_URL = 'https://test.sheeplab.net/api';
 
-// 仮のゲームID
-const DUMMY_GAME_ID = '00000000-0000-0000-0000-000000000000';
+// 【修正】DUMMY_GAME_ID の定義を削除しました
 
 interface MeasureProps {
-  readonly token: string | null;
-  readonly userId: string | null;
+  token: string | null;
+  userId: string | null;
 }
 
-export default function Measure(props: MeasureProps) {
+export default function Measure({ token, userId }: MeasureProps) {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
-  const [latestScore, setLatestScore] = useState<{ face: number; voice: number } | null>(null);
+  const [latestScore, setLatestScore] = useState<{ face: number, voice: number } | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   // ▼ カメラを起動する関数
@@ -46,23 +39,23 @@ export default function Measure(props: MeasureProps) {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
-      console.error('カメラの起動に失敗しました:', err);
-      alert('カメラを使用できません。ブラウザの許可設定を確認してください。');
+      console.error("カメラの起動に失敗しました:", err);
+      alert("カメラを使用できません。ブラウザの許可設定を確認してください。");
     }
   };
 
   // ▼ カメラを停止する関数
   const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
+    if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
+      stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
   };
 
   // ▼ 測定とデータ送信を行う関数
   const measureAndSend = useCallback(async () => {
-    if (!props.token || !props.userId) return;
+    if (!token || !userId) return;
 
     const dummyFaceScore = Math.floor(Math.random() * 100);
     const dummyVoiceScore = Math.floor(Math.random() * 100);
@@ -70,28 +63,28 @@ export default function Measure(props: MeasureProps) {
     setLatestScore({ face: dummyFaceScore, voice: dummyVoiceScore });
 
     try {
-      const payload: FatigueCreateReq = {
-        user_id: props.userId,
-        game_id: DUMMY_GAME_ID,
+      // 【修正】変数reqを定義し、game_id を null に設定（Issue #38対応）
+      const req: FatigueCreateRequest = {
+        user_id: userId,
+        game_id: null,
         face_score: dummyFaceScore,
         voice_score: dummyVoiceScore,
-        recorded_at: new Date().toISOString(),
+        recorded_at: new Date().toISOString()
       };
 
-      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, payload, {
-        headers: { Authorization: `Bearer ${props.token}` },
+      await axios.post<FatigueCreateResponse>(`${API_URL}/fatigue`, req, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       const time = new Date().toLocaleTimeString();
-      setLogs((prev) => [
-        `[${time}] 送信成功: 顔${dummyFaceScore} / 声${dummyVoiceScore}`,
-        ...prev.slice(0, 4),
-      ]);
+      setLogs(prev => [`[${time}] 送信成功: 顔${dummyFaceScore} / 声${dummyVoiceScore}`, ...prev.slice(0, 4)]);
+
     } catch (error) {
-      console.error('送信エラー:', error);
-      setLogs((prev) => ['送信失敗...', ...prev.slice(0, 4)]);
+      console.error("送信エラー:", error);
+      setLogs(prev => ["送信失敗...", ...prev.slice(0, 4)]);
     }
-  }, [props.token, props.userId]);
+  }, [token, userId]);
+
 
   // ▼ 録画状態の管理
   useEffect(() => {
@@ -112,16 +105,7 @@ export default function Measure(props: MeasureProps) {
   }, [isRecording, measureAndSend]);
 
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        height: '100vh',
-        bgcolor: '#282c34',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <Box sx={{ flexGrow: 1, height: '100vh', bgcolor: '#282c34', color: 'white', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar>
@@ -134,100 +118,49 @@ export default function Measure(props: MeasureProps) {
         </Toolbar>
       </AppBar>
 
-      {/* 【修正】maxWidth="xl" に拡張して大画面対応 */}
-      <Container
-        maxWidth="xl"
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 2,
-        }}
-      >
+      <Container maxWidth="xl" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2 }}>
+
         {/* カメラ映像エリア */}
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: '1200px', // 【修正】640px -> 1200px に拡大（PCで大きく表示）
-            aspectRatio: '16/9',
-            bgcolor: 'black',
-            borderRadius: 4,
-            overflow: 'hidden',
-            mb: 3,
-            boxShadow: isRecording ? '0 0 20px #f44336' : '0 0 10px rgba(0,0,0,0.5)',
-            transition: '0.3s',
-          }}
-        >
+        <Box sx={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '1200px',
+          aspectRatio: '16/9',
+          bgcolor: 'black', borderRadius: 4, overflow: 'hidden', mb: 3,
+          boxShadow: isRecording ? '0 0 20px #f44336' : '0 0 10px rgba(0,0,0,0.5)',
+          transition: '0.3s'
+        }}>
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: isRecording ? 1 : 0.3,
-            }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: isRecording ? 1 : 0.3 }}
           />
 
           {/* 録画中のインジケータ */}
           {!isRecording && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography variant="h6" color="grey.500">
-                待機中...
-              </Typography>
+            <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="h6" color="grey.500">待機中...</Typography>
             </Box>
           )}
           {isRecording && (
             <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-              <Chip label="LIVE REC" color="error" size="small" />
+               <Chip label="LIVE REC" color="error" size="small" />
             </Box>
           )}
         </Box>
 
         {/* スコア表示 */}
         {latestScore && (
-          // 【修正】映像に合わせて幅を少し広げる (600->800)
-          <Box
-            sx={{
-              mb: 4,
-              maxWidth: 800,
-              width: '100%',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 2,
-            }}
-          >
-            <Paper
-              sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
-            >
+          <Box sx={{ mb: 4, maxWidth: 800, width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}>
               <Typography variant="caption">現在の顔スコア</Typography>
-              <Typography
-                variant="h3"
-                color={latestScore.face < 30 ? 'error.main' : 'success.main'}
-                sx={{ fontWeight: 'bold' }}
-              >
+              <Typography variant="h3" color={latestScore.face < 30 ? 'error.main' : 'success.main'} sx={{ fontWeight: 'bold' }}>
                 {latestScore.face}
               </Typography>
             </Paper>
-            <Paper
-              sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}
-            >
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }}>
               <Typography variant="caption">現在の声スコア</Typography>
               <Typography variant="h3" color="primary.main" sx={{ fontWeight: 'bold' }}>
                 {latestScore.voice}
@@ -239,36 +172,27 @@ export default function Measure(props: MeasureProps) {
         {/* 操作ボタン */}
         <Button
           variant="contained"
-          color={isRecording ? 'error' : 'primary'}
+          color={isRecording ? "error" : "primary"}
           size="large"
           startIcon={isRecording ? <StopIcon /> : <VideocamIcon />}
           onClick={() => setIsRecording(!isRecording)}
           sx={{
-            borderRadius: 50,
-            px: 6,
-            py: 2,
-            fontSize: '1.2rem',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            borderRadius: 50, px: 6, py: 2, fontSize: '1.2rem', fontWeight: 'bold',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
           }}
         >
-          {isRecording ? '測定を停止' : '測定を開始'}
+          {isRecording ? "測定を停止" : "測定を開始"}
         </Button>
 
         {/* 送信ログ */}
         <Box sx={{ mt: 4, width: '100%', maxWidth: 500 }}>
           {logs.map((log, i) => (
-            <Typography
-              key={`log-${i}`}
-              variant="caption"
-              display="block"
-              color="grey.500"
-              align="center"
-            >
+            <Typography key={i} variant="caption" display="block" color="grey.500" align="center">
               {log}
             </Typography>
           ))}
         </Box>
+
       </Container>
     </Box>
   );
