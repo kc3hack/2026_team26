@@ -14,13 +14,13 @@ import (
 
 func NewRouter(authService *service.AuthService, fatigueService *service.FatigueService, hub *ws.Hub) http.Handler {
 	r := mux.NewRouter()
-	r.HandleFunc("/fatigue", fatigue.MakeCreateFatigueHandler(fatigueService)).Methods("POST")
-	r.HandleFunc("/fatigue", fatigue.MakeListFatigueHandler(fatigueService)).Methods("GET")
+	common.GET(r, "/fatigue", fatigue.MakeListFatigueHandler(fatigueService), authService)
+	common.POST(r, "/fatigue", fatigue.MakeCreateFatigueHandler(fatigueService), authService)
 	r.HandleFunc("/ws/fatigue", common.MakeWSHandler(hub))
-	r.HandleFunc("/auth/signup", auth.MakeSignupHandler(authService)).Methods("POST")
-	r.HandleFunc("/auth/signin", auth.MakeSigninHandler(authService)).Methods("POST")
-	r.HandleFunc("/auth/refresh", auth.MakeRefreshHandler(authService)).Methods("POST")
-	r.HandleFunc("/auth/logout", auth.MakeLogoutHandler(authService)).Methods("POST")
-	r.HandleFunc("/update", update.MakeCheckUpdateHandler()).Methods("GET")
+	common.POST(r, "/auth/signup", auth.MakeSignupHandler(authService), nil)
+	common.POST(r, "/auth/signin", auth.MakeSigninHandler(authService), nil)
+	common.POST(r, "/auth/refresh", auth.MakeRefreshHandler(authService), nil)
+	common.POST(r, "/auth/logout", auth.MakeLogoutHandler(authService), nil)
+	common.GET(r, "/update", update.MakeCheckUpdateHandler(), nil)
 	return r
 }
