@@ -115,7 +115,6 @@ paths:
         - $ref: "#/components/parameters/UserFatigueQuery"
         - $ref: "#/components/parameters/FromTimestampQuery"
         - $ref: "#/components/parameters/ToTimestampQuery"
-        - $ref: "#/components/parameters/MaxNumberQuery"
       responses:
         "200":
           description: Fatigue logs

@@ -1,4 +1,4 @@
-package fatigue
+package team
 
 import (
 	"encoding/json"
@@ -6,30 +6,27 @@ import (
 	"time"
 
 	"github.com/team26/backend/internal/httpserver/common"
+	"github.com/team26/backend/internal/model/response"
 	"github.com/team26/backend/internal/service"
 	"github.com/team26/backend/internal/utils"
 )
 
-func MakeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
+func MakeListTeamFatigueHandler(svc *service.TeamService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		uid := q.Get("u")
 		f := q.Get("f")
 		t := q.Get("t")
-		nstr := q.Get("n")
+		teamID := q.Get("team_id")
 
-		if uid == "" {
-			common.WriteErrorJSON(w, http.StatusBadRequest, "u required")
+		userID, _ := r.Context().Value(common.ContextUserIDKey).(string)
+		if userID == "" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		maxNum, err := utils.SetNum(nstr, 60*24)
+		err := svc.IsTeamMember(userID, teamID)
 		if err != nil {
-			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
-			return
-		}
-		if maxNum < 1 {
-			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid n: must be >= 1")
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 
@@ -45,13 +42,15 @@ func MakeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 			return
 		}
 
-		list, err := svc.List(uid, fromT, toT, maxNum)
+		var resp response.TeamFatigue
+
+		resp.FatigueList, resp.TeamUser, resp.TeamData, err = svc.TeamFatigueList(teamID, fromT, toT)
 		if err != nil {
 			common.WriteErrorJSON(w, http.StatusInternalServerError, "failed")
 			return
 		}
 
 		w.Header().Set("Content-Type", common.ContentTypeJSON)
-		json.NewEncoder(w).Encode(list)
+		json.NewEncoder(w).Encode(resp)
 	}
 }
