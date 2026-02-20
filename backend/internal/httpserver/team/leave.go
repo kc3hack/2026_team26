@@ -22,7 +22,7 @@ func MakeLeaveTeamHandler(svc *service.TeamService) http.HandlerFunc {
 			return
 		}
 		if err := svc.Leave(req.TeamID, userID); err != nil {
-			common.WriteErrorJSON(w, http.StatusBadRequest, err.Error())
+			common.WriteErrorJSON(w, http.StatusBadRequest, "failed to leave team")
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

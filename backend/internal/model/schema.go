@@ -49,7 +49,7 @@ type Game struct {
 
 type Team struct {
 	ID        string    `json:"id" db:"id"`
-	TeamName  string    `json:"team_name" db:"team_name"`
-	OwnerID   string    `json:"owner_id" db:"owner_id"`
+	TeamName  string    `json:"name" db:"team_name"`
+	OwnerID   string    `json:"created_by" db:"owner_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }

@@ -26,7 +26,11 @@ func MakeListTeamFatigueHandler(svc *service.TeamService) http.HandlerFunc {
 
 		err := svc.IsTeamMember(userID, teamID)
 		if err != nil {
-			common.WriteErrorJSON(w, http.StatusForbidden, "forbidden")
+			if err == service.ErrNotTeamMember {
+				common.WriteErrorJSON(w, http.StatusForbidden, "you are not a member of this team")
+				return
+			}
+			common.WriteErrorJSON(w, http.StatusInternalServerError, "failed to verify team membership")
 			return
 		}
 

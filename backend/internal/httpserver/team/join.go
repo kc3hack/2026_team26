@@ -28,10 +28,10 @@ func MakeJoinTeamHandler(svc *service.TeamService) http.HandlerFunc {
 		}
 		resp, err := svc.Join(teamId, userID)
 		if err != nil {
-			common.WriteErrorJSON(w, http.StatusBadRequest, err.Error())
+			common.WriteErrorJSON(w, http.StatusBadRequest, "failed to join team")
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", common.ContentTypeJSON)
 		json.NewEncoder(w).Encode(resp)
 	}
 }

@@ -2,12 +2,17 @@ package service
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/team26/backend/internal/model"
 	"github.com/team26/backend/internal/model/request"
 	"github.com/team26/backend/internal/model/response"
 	"github.com/team26/backend/internal/store"
+)
+
+var (
+	ErrNotTeamMember = errors.New("user is not a member of this team")
 )
 
 type TeamService struct {
@@ -67,13 +72,16 @@ func (s *TeamService) IsTeamMember(userId, teamId string) error {
 			return nil
 		}
 	}
-	return sql.ErrNoRows
+	return ErrNotTeamMember
 }
 
 func (s *TeamService) TeamFatigueList(teamId string, from, to time.Time) (map[string][]model.FatigueLog, []*model.User, *model.Team, error) {
 	list := make(map[string][]model.FatigueLog)
 	fatigueStore := &store.FatigueStore{DB: s.Store.DB}
 	userStore := &store.UserStore{DB: s.Store.DB}
+	if to.Before(from) {
+		return nil, nil, nil, errors.New("invalid time range: to must be after from")
+	}
 	maxNum := int(to.Sub(from).Minutes())
 	var users []*model.User
 

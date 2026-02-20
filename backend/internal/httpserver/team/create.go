@@ -23,10 +23,10 @@ func MakeCreateTeamHandler(svc *service.TeamService) http.HandlerFunc {
 		}
 		resp, err := svc.Create(&req, userID)
 		if err != nil {
-			common.WriteErrorJSON(w, http.StatusBadRequest, err.Error())
+			common.WriteErrorJSON(w, http.StatusBadRequest, "could not create team")
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", common.ContentTypeJSON)
 		json.NewEncoder(w).Encode(resp)
 	}
 }

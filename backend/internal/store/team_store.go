@@ -12,21 +12,32 @@ type TeamStore struct{ DB *sql.DB }
 
 func NewTeamStore(db *sql.DB) *TeamStore { return &TeamStore{DB: db} }
 
-func (s *TeamStore) Create(teamName, ownerUuid string) (*model.Team, error) {
+func (s *TeamStore) Create(teamName, ownerUuid string) (team *model.Team, err error) {
 	id := uuid.New().String()
 	now := time.Now()
 	if err := s.existUser(ownerUuid); err != nil {
 		return nil, err
 	}
-	if _, err := s.DB.Exec(`INSERT INTO teams (id,team_name,owner_id,created_at) VALUES ($1,$2,$3,$4)`, id, teamName, ownerUuid, now); err != nil {
-		return nil, err
-	}
-	team, err := s.GetByTeamID(id)
+	tx, err := s.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.Join(team.ID, ownerUuid); err != nil {
+	if _, err := tx.Exec(`INSERT INTO teams (id,team_name,owner_id,created_at) VALUES ($1,$2,$3,$4)`, id, teamName, ownerUuid, now); err != nil {
+		tx.Rollback()
 		return nil, err
+	}
+	if _, err = tx.Exec(`INSERT INTO team_members (team_id,user_id,joined_at) VALUES ($1,$2,$3)`, id, ownerUuid, now); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	team = &model.Team{
+		ID:        id,
+		TeamName:  teamName,
+		OwnerID:   ownerUuid,
+		CreatedAt: now,
 	}
 	return team, nil
 }
