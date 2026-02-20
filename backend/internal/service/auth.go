@@ -63,25 +63,25 @@ func (s *AuthService) Signin(req *request.Signin) (*response.Signin, string, err
 	return &response.Signin{AuthResponse: model.AuthResponse{User: *u, AccessToken: at}}, rtRaw, nil
 }
 
-func (s *AuthService) RefreshToken(raw string) (*response.Refresh, string, error) {
+func (s *AuthService) RefreshToken(raw string) (*response.Refresh, error) {
 	h := sha256.Sum256([]byte(raw))
 	rtHash := hex.EncodeToString(h[:])
 	id, userID, revoked, err := s.Refresh.FindByHash(rtHash)
 	if err != nil || id == "" || revoked {
-		return nil, "", errors.New("invalid refresh token")
+		return nil, errors.New("invalid refresh token")
 	}
 	u, err := s.Users.GetByID(userID)
 	if err != nil {
-		return nil, "", err
+		return nil, errors.New("user not found")
 	}
 	// issue new access token
 	claims := jwt.MapClaims{"sub": u.ID, "exp": time.Now().Add(15 * time.Minute).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	at, err := token.SignedString(s.jwtKey)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return &response.Refresh{RefreshToken: raw, AccessToken: at}, raw, nil
+	return &response.Refresh{RefreshToken: raw, AccessToken: at}, nil
 }
 
 func (s *AuthService) Logout(raw string) error {

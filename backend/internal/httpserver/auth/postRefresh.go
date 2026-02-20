@@ -17,7 +17,7 @@ func MakeRefreshHandler(svc *service.AuthService) http.HandlerFunc {
 			common.WriteErrorJSON(w, http.StatusBadRequest, common.InvalidPayload)
 			return
 		}
-		authResp, refreshRaw, err := svc.RefreshToken(req.RefreshToken)
+		authResp, err := svc.RefreshToken(req.RefreshToken)
 		if err != nil {
 			common.WriteErrorJSON(w, http.StatusUnauthorized, "invalid refresh token")
 			return
@@ -26,7 +26,7 @@ func MakeRefreshHandler(svc *service.AuthService) http.HandlerFunc {
 		out := struct {
 			*response.Refresh
 			RefreshToken string `json:"refresh_token,omitempty"`
-		}{authResp, refreshRaw}
+		}{authResp, authResp.RefreshToken}
 		w.Header().Set("Content-Type", common.ContentTypeJSON)
 		json.NewEncoder(w).Encode(out)
 	}
