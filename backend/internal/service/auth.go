@@ -116,3 +116,20 @@ func (s *AuthService) VerifyAccessToken(raw string) (string, error) {
 
 	return sub, nil
 }
+
+func (s *AuthService) GetMe(userID string) (*response.Me, error) {
+	u, err := s.Users.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	teamService := &TeamService{Store: &store.TeamStore{DB: s.Users.DB}}
+	t, err := teamService.GetTeamByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &response.Me{
+		UserData:  *u,
+		UserTeams: t,
+	}
+	return resp, nil
+}
