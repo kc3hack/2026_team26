@@ -9,7 +9,7 @@ import Menu from './pages/Menu';
 import Register from './pages/Register';
 import TeamPage from './pages/Team';
 // ▼▼▼ 型定義をインポート (LogoutRequestを追加) ▼▼▼
-import type { LogoutRequest } from './types';
+import type LogoutRequest from './types/request/logoutReq';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 

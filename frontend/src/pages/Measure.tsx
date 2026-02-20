@@ -22,8 +22,7 @@ import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
-// 仮のゲームID
-const DUMMY_GAME_ID = '00000000-0000-0000-0000-000000000000';
+// 【修正】DUMMY_GAME_ID の定義を削除しました
 
 interface MeasureProps {
   readonly token: string | null;
@@ -70,15 +69,16 @@ export default function Measure(props: MeasureProps) {
     setLatestScore({ face: dummyFaceScore, voice: dummyVoiceScore });
 
     try {
-      const payload: FatigueCreateReq = {
+      // 【修正】変数reqを定義し、game_id を null に設定（Issue #38対応）
+      const req: FatigueCreateReq = {
         user_id: props.userId,
-        game_id: DUMMY_GAME_ID,
+        game_id: undefined, // DUMMY_GAME_ID を削除し、game_id を undefined に設定
         face_score: dummyFaceScore,
         voice_score: dummyVoiceScore,
         recorded_at: new Date().toISOString(),
       };
 
-      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, payload, {
+      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, req, {
         headers: { Authorization: `Bearer ${props.token}` },
       });
 
@@ -134,7 +134,6 @@ export default function Measure(props: MeasureProps) {
         </Toolbar>
       </AppBar>
 
-      {/* 【修正】maxWidth="xl" に拡張して大画面対応 */}
       <Container
         maxWidth="xl"
         sx={{
@@ -151,7 +150,7 @@ export default function Measure(props: MeasureProps) {
           sx={{
             position: 'relative',
             width: '100%',
-            maxWidth: '1200px', // 【修正】640px -> 1200px に拡大（PCで大きく表示）
+            maxWidth: '1200px',
             aspectRatio: '16/9',
             bgcolor: 'black',
             borderRadius: 4,
@@ -202,7 +201,6 @@ export default function Measure(props: MeasureProps) {
 
         {/* スコア表示 */}
         {latestScore && (
-          // 【修正】映像に合わせて幅を少し広げる (600->800)
           <Box
             sx={{
               mb: 4,
@@ -258,13 +256,7 @@ export default function Measure(props: MeasureProps) {
         {/* 送信ログ */}
         <Box sx={{ mt: 4, width: '100%', maxWidth: 500 }}>
           {logs.map((log, i) => (
-            <Typography
-              key={`log-${i}`}
-              variant="caption"
-              display="block"
-              color="grey.500"
-              align="center"
-            >
+            <Typography key={i} variant="caption" display="block" color="grey.500" align="center">
               {log}
             </Typography>
           ))}
