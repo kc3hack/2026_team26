@@ -2,8 +2,8 @@
 
 public record UpdateRes(
     [property: JsonPropertyName("current")]
-    string Current,
+    Version Current,
 
     [property: JsonPropertyName("support")]
-    string[] Support
+    Version[] Support
 );

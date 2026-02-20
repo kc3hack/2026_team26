@@ -1,7 +1,7 @@
 ﻿public class UpdateUsecase
 {
     private readonly IUpdateService _updateService;
-    private readonly string _currentVersion = "0.1.0"; // 自アプリのバージョン
+    private readonly Version _currentVersion = new Version(0, 0, 1); // 自アプリのバージョン
 
     public UpdateUsecase(IUpdateService updateService)
     {
@@ -12,11 +12,12 @@
     {
         var response = await _updateService.CheckUpdateAsync();
 
-        // シンプルなバージョン比較ロジック
-        if (response.Current != _currentVersion)
+        bool isSupported = response.Support
+            .Contains(_currentVersion);
+        if (isSupported)
         {
-            return (true, response.Current);
+            return (false, null);
         }
-        return (false, null);
+        return (true, null);
     }
 }

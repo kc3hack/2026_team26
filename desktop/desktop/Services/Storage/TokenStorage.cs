@@ -20,6 +20,7 @@
     {
         _accessToken = null;
         _refreshToken = null;
+        _userId = null;
         return Task.CompletedTask;
     }
 }
