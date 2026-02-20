@@ -10,7 +10,7 @@ import (
 	"github.com/team26/backend/internal/service"
 )
 
-func MakeCreateInventionHandler(svc *service.TeamService) http.HandlerFunc {
+func MakeCreateInviteHandler(svc *service.TeamService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request.TeamInvite
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -27,7 +27,7 @@ func MakeCreateInventionHandler(svc *service.TeamService) http.HandlerFunc {
 			common.WriteErrorJSON(w, http.StatusForbidden, "user is not a member of the team")
 			return
 		}
-		code, limit, err := svc.CreateInvite(req.TeamID, req.Limit)
+		code, limit, err := svc.CreateInvite(req.TeamID, userID, req.Limit)
 		if err != nil {
 			common.WriteErrorJSON(w, http.StatusBadRequest, "could not create invite")
 			return

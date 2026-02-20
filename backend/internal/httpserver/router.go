@@ -26,7 +26,7 @@ func NewRouter(authService *service.AuthService, fatigueService *service.Fatigue
 	common.POST(r, "/team/create", team.MakeCreateTeamHandler(teamService), authService)
 	common.POST(r, "/team/join", team.MakeJoinTeamHandler(teamService), authService)
 	common.POST(r, "/team/leave", team.MakeLeaveTeamHandler(teamService), authService)
-	common.POST(r, "/team/invite", team.MakeCreateInventionHandler(teamService), authService)
+	common.POST(r, "/team/invite", team.MakeCreateInviteHandler(teamService), authService)
 	common.GET(r, "/team/fatigue", team.MakeListTeamFatigueHandler(teamService), authService)
 	common.GET(r, "/me", auth.MakeGetMeHandler(authService), authService)
 	return r

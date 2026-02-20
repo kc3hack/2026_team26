@@ -111,13 +111,14 @@ func (s *TeamStore) ListMembers(teamId string) ([]string, error) {
 	return members, nil
 }
 
-func (s *TeamStore) CreateInvite(teamId string, limit *time.Time) (string, *time.Time, error) {
+func (s *TeamStore) CreateInvite(teamId, userID string, limit *time.Time) (string, *time.Time, error) {
 	inviteCode := uuid.New().String()
-	_, err := s.DB.Exec(`INSERT INTO team_tags (team_id,tag,limited_until) VALUES ($1,$2,$3)`, teamId, inviteCode, limit)
-	if err != nil {
-		return "", nil, err
-	}
-	return inviteCode, limit, nil
+	tagID := uuid.New().String()
+	_, err := s.DB.Exec(
+		`INSERT INTO team_tags (id,team_id,tag,created_user_id,limited_until) VALUES ($1,$2,$3,$4,$5)`,
+		tagID, teamId, inviteCode, userID, limit,
+	)
+	return inviteCode, limit, err
 }
 
 func (s *TeamStore) GetTeamByUserID(userID string) ([]model.Team, error) {
