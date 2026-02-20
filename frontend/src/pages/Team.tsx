@@ -45,7 +45,10 @@ export default function TeamPage(props: TeamProps) {
 
   // 入力フォーム用
   const [createName, setCreateName] = useState('');
-  const [joinCode, setJoinCode] = useState(inviteCode || '');
+  const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
+  useEffect(() => {
+      setJoinCode(inviteCode);
+  }, [inviteCode]);
 
   // ▼ 自分の所属チーム情報を取得
   const fetchTeamData = useCallback(async () => {
