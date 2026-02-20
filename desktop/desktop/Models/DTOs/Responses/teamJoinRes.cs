@@ -1,5 +1,6 @@
 ﻿public record TeamJoinRes(
     string Id,
     string Name,
-    string TeamTag
-) : Team(Id, Name, TeamTag);
+    DateTime CreatedAt,
+    string? CreatedBy
+) : Team(Id, Name, CreatedAt, CreatedBy);
