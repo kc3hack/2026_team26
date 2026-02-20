@@ -15,6 +15,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	accessTokenInvalid = "invalid access token"
+)
+
 type AuthService struct {
 	Users   *store.UserStore
 	Refresh *store.RefreshStore
@@ -92,4 +96,31 @@ func (s *AuthService) Logout(raw string) error {
 		return err
 	}
 	return s.Refresh.RevokeByID(id)
+}
+
+// VerifyAccessToken validates a bearer access token and returns the subject user ID.
+func (s *AuthService) VerifyAccessToken(raw string) (string, error) {
+	parser := jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	claims := jwt.MapClaims{}
+	_, err := parser.ParseWithClaims(raw, claims, func(t *jwt.Token) (any, error) {
+		return s.jwtKey, nil
+	})
+	if err != nil {
+		return "", errors.New(accessTokenInvalid)
+	}
+
+	expRaw, ok := claims["exp"].(float64)
+	if !ok {
+		return "", errors.New(accessTokenInvalid)
+	}
+	if time.Unix(int64(expRaw), 0).Before(time.Now()) {
+		return "", errors.New("token expired")
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", errors.New(accessTokenInvalid)
+	}
+
+	return sub, nil
 }
