@@ -9,20 +9,20 @@ import (
 	"github.com/team26/backend/internal/service"
 )
 
-func MakeLeaveTeamHandler(svc *service.TeamService, auth *service.AuthService) http.HandlerFunc {
+func MakeLeaveTeamHandler(svc *service.TeamService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request.TeamLeave
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid payload", http.StatusBadRequest)
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid payload")
 			return
 		}
 		userID, _ := r.Context().Value(common.ContextUserIDKey).(string)
 		if userID == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			common.WriteErrorJSON(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
 		if err := svc.Leave(req.TeamID, userID); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			common.WriteErrorJSON(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

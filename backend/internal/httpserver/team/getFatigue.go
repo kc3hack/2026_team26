@@ -20,13 +20,13 @@ func MakeListTeamFatigueHandler(svc *service.TeamService) http.HandlerFunc {
 
 		userID, _ := r.Context().Value(common.ContextUserIDKey).(string)
 		if userID == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			common.WriteErrorJSON(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
 
 		err := svc.IsTeamMember(userID, teamID)
 		if err != nil {
-			http.Error(w, "forbidden", http.StatusForbidden)
+			common.WriteErrorJSON(w, http.StatusForbidden, "forbidden")
 			return
 		}
 
@@ -46,7 +46,7 @@ func MakeListTeamFatigueHandler(svc *service.TeamService) http.HandlerFunc {
 
 		resp.FatigueList, resp.TeamUser, resp.TeamData, err = svc.TeamFatigueList(teamID, fromT, toT)
 		if err != nil {
-			common.WriteErrorJSON(w, http.StatusInternalServerError, "failed")
+			common.WriteErrorJSON(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
