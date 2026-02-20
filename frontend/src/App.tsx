@@ -88,6 +88,13 @@ function App() {
             token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
           }
         />
+        {/* ▼▼ 追加: 招待URL用の動的ルーティング ▼▼ */}
+        <Route
+        path="/invite/:inviteCode"
+        element={
+        token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
+        }
+        />
 
         {/* Loginコンポーネントに setRefreshToken も渡す */}
         <Route

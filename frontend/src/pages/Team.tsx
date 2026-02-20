@@ -24,9 +24,8 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { CreateTeamRequest, JoinTeamRequest, Team } from '../types';
-import type ApiErrorResponse from '../types/responce/errorRes';
+import { useNavigate, useParams } from 'react-router-dom';
+import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
@@ -37,6 +36,7 @@ interface TeamProps {
 
 export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
+  const { inviteCode } = useParams<{ inviteCode: string }>();
 
   // 状態管理
   const [team, setTeam] = useState<Team | null>(null);
@@ -45,7 +45,10 @@ export default function TeamPage(props: TeamProps) {
 
   // 入力フォーム用
   const [createName, setCreateName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
+  useEffect(() => {
+      setJoinCode(inviteCode);
+  }, [inviteCode]);
 
   // ▼ 自分の所属チーム情報を取得
   const fetchTeamData = useCallback(async () => {
