@@ -25,7 +25,15 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { ApiErrorResponse, TeamCreateRequest, TeamFatigueResponse, TeamJoinRequest } from '../types';
+import type TeamCreateReq from '../types/request/teamCreateReq';
+import type TeamInviteReq from '../types/request/teamInviteReq'; // 追加
+import type TeamJoinReq from '../types/request/teamJoinReq';
+import type TeamLeaveReq from '../types/request/teamLeaveReq'; // 追加
+import type ApiErrorResponse from '../types/responce/errorRes';
+import type MeRes from '../types/responce/meRes'; // 追加
+import type TeamFatigueRes from '../types/responce/teamFatigueRes';
+import type TeamInviteRes from '../types/responce/teamInviteRes'; // 追加
+import type User from '../types/user';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
@@ -67,34 +75,50 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setErrorMsg(null);
 
     try {
-      const myTeamId = null; // 仮置き（あとでAPIから取得する）
+      // 1. まずは自分の情報を取得し、所属チームがあるか確認する
+      const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      if (!myTeamId) {
+      const myTeams = meRes.data.user_teams;
+
+      // 所属チームがない場合は、未所属画面を表示
+      if (!myTeams || myTeams.length === 0) {
         setTeam(null);
         setLoading(false);
         return;
       }
 
-      const res = await axios.get<TeamFatigueResponse>(`${API_URL}/team/fatigue?team_id=${myTeamId}`, {
+      // 今回は1つ目のチーム情報を表示する
+      const myTeamId = myTeams[0].id;
+
+      // 2. チームの疲労度データと、招待コードを「同時に」取得する
+      const fatiguePromise = axios.get<TeamFatigueRes>(`${API_URL}/team/fatigue?team_id=${myTeamId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // 現状のUIに合わせるための仮の変換処理
+      const inviteReq: TeamInviteReq = { team_id: myTeamId };
+      const invitePromise = axios.post<TeamInviteRes>(`${API_URL}/team/invite`, inviteReq, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // API通信を並列で待つ（高速化のため）
+      const [fatigueRes, inviteRes] = await Promise.all([fatiguePromise, invitePromise]);
+
+      // 3. 画面表示用のデータに変換
       const teamData: TeamUI = {
-        id: res.data.team_data.id,
-        name: res.data.team_data.name,
-        invite_code: "dummy_tag", // ※後述のバックエンドの欠陥参照
-        members: res.data.team_user.map((user) => {
-          // ▼ 修正: fatigue_logs の中から、このユーザーのログ配列を探す
-          const userLogs = res.data.fatigue_logs[user.id] || [];
-          // 一番新しいログ（とりあえず配列の先頭にあると仮定）を取得
+        id: fatigueRes.data.team_data.id,
+        name: fatigueRes.data.team_data.name,
+        invite_code: inviteRes.data.invite_code, // 本物の招待コード！
+        members: fatigueRes.data.team_user.map((user: User) => {
+          const userLogs = fatigueRes.data.fatigue_logs[user.id] || [];
           const latestLog = userLogs.length > 0 ? userLogs[0] : null;
 
           return {
             user_id: user.id,
             display_name: user.display_name,
-            latest_face_score: latestLog?.face_score, // ログからスコアを取得
-            last_updated: latestLog?.recorded_at, // ログから時間を取得
+            latest_face_score: latestLog?.face_score,
+            last_updated: latestLog?.recorded_at,
           };
         })
       };
@@ -118,7 +142,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
-      const req: TeamCreateRequest = { name: createName };
+      const req: TeamCreateReq = { name: createName };
       await axios.post(`${API_URL}/team/create`, req, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -137,7 +161,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
-      const req: TeamJoinRequest = { team_tag: joinCode };
+      const req: TeamJoinReq = { team_tag: joinCode };
       await axios.post(`${API_URL}/team/join`, req, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -145,6 +169,29 @@ export default function TeamPage({ token, userId }: TeamProps) {
     } catch (error) {
       console.error(error);
       handleError(error, 'チームの参加に失敗しました。タグが間違っている可能性があります。'); // ← setErrorMsgから変更
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // ▼ チーム退出処理
+  const handleLeaveTeam = async () => {
+    // チーム情報がない場合、または確認ダイアログで「キャンセル」を押した場合は処理を中断
+    if (!team) return;
+    if (!window.confirm(`本当にチーム「${team.name}」から退出しますか？`)) return;
+
+    setIsActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const req: TeamLeaveReq = { team_id: team.id };
+      await axios.post(`${API_URL}/team/leave`, req, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
+      fetchTeamData();
+    } catch (error) {
+      console.error(error);
+      handleError(error, 'チームの退出に失敗しました。');
     } finally {
       setIsActionLoading(false);
     }
@@ -195,7 +242,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: '#f5f7fa' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden'}}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
@@ -339,7 +386,17 @@ export default function TeamPage({ token, userId }: TeamProps) {
                     onDelete={copyCode}
                     deleteIcon={<ContentCopyIcon />}
                     sx={{ fontWeight: 'bold', fontSize: '1.1rem', py: 2 }}
-                  />
+                    />
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={handleLeaveTeam}
+                    disabled={isActionLoading}
+                    sx={{ mt: 2, display: 'block', ml: { xs: 0, md: 'auto' } }}
+                  >
+                    チームを退出
+                  </Button>
                 </Box>
               </Box>
             </Paper>

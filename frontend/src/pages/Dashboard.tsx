@@ -1,185 +1,150 @@
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import {
+  Alert,
   AppBar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  Paper,
+  Box, Card, CardContent, CircularProgress, Container,
+  IconButton,
   Toolbar,
-  Typography,
+  Typography
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import type FatigueLog from '../types/fatigueLog';
+import { useNavigate } from 'react-router-dom';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import type FatigueListRes from '../types/responce/fatigueListRes';
+import type MeRes from '../types/responce/meRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface DashboardProps {
-  readonly token: string;
-  readonly logout: () => void;
-  readonly userId: string | null;
+  token: string;
+  logout: () => Promise<void>;
+  userId: string | null;
 }
 
-// グラフ表示用に時間を加工した型
-interface ChartData extends FatigueLog {
-  time: string;
-}
+export default function Dashboard({ token }: DashboardProps) {
+  const navigate = useNavigate(); // 追加: 画面遷移用
 
-export default function Dashboard(props: DashboardProps) {
-  const [data, setData] = useState<ChartData[]>([]);
-  const [currentStatus, setCurrentStatus] = useState<{
-    label: string;
-    color: 'default' | 'error' | 'warning' | 'success';
-  }>({
-    label: '取得中...',
-    color: 'default',
-  });
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
 
-  const fetchData = useCallback(async () => {
-    if (!props.userId) return;
-
-    const now = new Date();
-    const to = now.toISOString();
-    const start = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg(null);
 
     try {
-      // API 0.1.0 仕様: GET /fatigue?u={userId}&f={start}&t={to}
-      const res = await axios.get<FatigueListRes>(`${API_URL}/fatigue`, {
-        headers: { Authorization: `Bearer ${props.token}` },
-        params: { u: props.userId, f: start, t: to },
+      const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const myUserId = meRes.data.user_data.id;
+
+      const fatigueRes = await axios.get<FatigueListRes>(`${API_URL}/fatigue?u=${myUserId}&n=10`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      const logs = res.data.items || [];
+      const formattedData = (fatigueRes.data.items || []).map(log => {
+        const date = new Date(log.recorded_at);
+        return {
+          time: `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`,
+          face_score: log.face_score,
+          voice_score: log.voice_score,
+        };
+      });
 
-      const formattedData: ChartData[] = logs
-        .map((item) => ({
-          ...item,
-          time: new Date(item.recorded_at).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        }))
-        .reverse();
+      setChartData(formattedData.reverse());
 
-      setData(formattedData);
-
-      if (formattedData.length > 0) {
-        const latest = formattedData.at(-1)!;
-        // face_scoreに基づいた判定
-        if (latest.face_score <= 30) {
-          setCurrentStatus({ label: '危険 (休憩してください)', color: 'error' });
-        } else if (latest.face_score <= 60) {
-          setCurrentStatus({ label: '注意 (疲れが見えます)', color: 'warning' });
-        } else {
-          setCurrentStatus({ label: '良好 (正常です)', color: 'success' });
-        }
-      } else {
-        setCurrentStatus({ label: 'データなし', color: 'default' });
-      }
     } catch (error) {
-      console.error('データ取得失敗', error);
+      console.error(error);
+      setErrorMsg('データの取得に失敗しました。');
+    } finally {
+      setLoading(false);
     }
-  }, [props.token, props.userId]);
+  }, [token]);
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    // 【修正】height: '100vh' と flex レイアウトで画面いっぱいに広げる
-    <Box
-      sx={{
-        flexGrow: 1,
-        height: '100vh',
-        bgcolor: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <AppBar position="static">
+    // ▼ 修正: position="absolute" と width="100vw" で元の制限を突破して画面いっぱいに広げる
+    <Box sx={{
+      minHeight: '100vh',
+      bgcolor: '#f5f7fa',
+      width: '100vw',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      overflowX: 'hidden' // 横スクロールバーを出さないための処理
+    }}>
+
+      {/* ▼ 追加: メニューに戻るためのヘッダー（AppBar） ▼ */}
+      <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            疲労モニタリングシステム
+          <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            ダッシュボード
           </Typography>
-          <Typography variant="caption" sx={{ mr: 2 }}>
-            ID: {props.userId}
-          </Typography>
-          <Button color="inherit" onClick={props.logout}>
-            ログアウト
-          </Button>
         </Toolbar>
       </AppBar>
 
-      {/* 【修正】maxWidth="xl" に変更し、flexGrow: 1 で下まで伸ばす */}
-      <Container
-        maxWidth="xl"
-        sx={{ mt: 4, mb: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}
-      >
-        <Box mb={4}>
-          <Card>
-            <CardContent
-              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-            >
-              <Typography variant="h6">現在のコンディション</Typography>
-              <Chip
-                label={currentStatus.label}
-                color={currentStatus.color}
-                sx={{ fontSize: '1.2rem', p: 1 }}
-              />
-            </CardContent>
-          </Card>
-        </Box>
+      {/* ▼ コンテンツ部分 ▼ */}
+      <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
+        {errorMsg && (
+          <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>
+        )}
 
-        {/* 【修正】高さを固定せず、flexGrow: 1 で画面の残り領域いっぱいまで広げる */}
-        <Paper
-          elevation={3}
-          sx={{ p: 3, flexGrow: 1, minHeight: 400, display: 'flex', flexDirection: 'column' }}
-        >
-          <Typography variant="h6" gutterBottom>
-            モニタリング推移
-          </Typography>
-          {/* 親要素に高さ(flexGrow)があるので、height="100%" が効くようになる */}
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="face_score"
-                stroke="#ff5722"
-                strokeWidth={3}
-                name="顔スコア"
-                dot={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="voice_score"
-                stroke="#8884d8"
-                strokeWidth={2}
-                name="声スコア"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Paper>
+        <Card elevation={2} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, width: '100%' }}>
+          <CardContent>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              最近のスコア推移
+            </Typography>
+
+            {chartData.length === 0 ? (
+              <Box sx={{ p: 6, textAlign: 'center' }}>
+                <Typography color="text.secondary" variant="h6">まだ疲労度の記録がありません。</Typography>
+              </Box>
+            ) : (
+              <Box sx={{ width: '100%', height: 400, mt: 4 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="face_score"
+                      name="顔スコア"
+                      stroke="#8884d8"
+                      strokeWidth={3}
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="voice_score"
+                      name="声スコア"
+                      stroke="#82ca9d"
+                      strokeWidth={3}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
       </Container>
     </Box>
   );
