@@ -91,13 +91,9 @@ export default function TeamPage(props: TeamProps) {
     if (!joinCode) return;
     try {
       const body: JoinTeamRequest = { invite_code: joinCode };
-      await axios.post<Team>(
-        `${API_URL}/teams/join`,
-        body,
-        {
-          headers: { Authorization: `Bearer ${props.token}` },
-        },
-      );
+      await axios.post<Team>(`${API_URL}/teams/join`, body, {
+        headers: { Authorization: `Bearer ${props.token}` },
+      });
       alert('チームに参加しました！');
       fetchTeamData();
     } catch (error) {
