@@ -1,4 +1,4 @@
-package httpserver
+package fatigue
 
 import (
 	"encoding/json"
@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/team26/backend/internal/model"
+	"github.com/team26/backend/internal/httpserver/common"
+	"github.com/team26/backend/internal/model/request"
 	"github.com/team26/backend/internal/service"
 )
 
@@ -20,34 +21,34 @@ func isAllowingValues(value int) bool {
 	return true
 }
 
-func makeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
+func MakeCreateFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req model.FatigueCreateRequest
+		var req request.FatigueCreate
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeErrorJSON(w, http.StatusBadRequest, invalidPayload)
+			common.WriteErrorJSON(w, http.StatusBadRequest, common.InvalidPayload)
 			return
 		}
 		if _, err := uuid.Parse(req.UserID); err != nil {
-			writeErrorJSON(w, http.StatusBadRequest, "invalid user_id")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid user_id")
 			return
 		}
-		// validate optional game_id if provided
+
 		if req.GameID != nil {
 			if _, err := uuid.Parse(*req.GameID); err != nil {
-				writeErrorJSON(w, http.StatusBadRequest, "invalid game_id")
+				common.WriteErrorJSON(w, http.StatusBadRequest, "invalid game_id")
 				return
 			}
 		}
 		if !isAllowingValues(req.FaceScore) || !isAllowingValues(req.VoiceScore) {
-			writeErrorJSON(w, http.StatusBadRequest, "scores must be between 0 and 125")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "scores must be between 0 and 125")
 			return
 		}
 		resp, err := svc.Create(&req)
 		if err != nil {
-			writeErrorJSON(w, http.StatusInternalServerError, "failed")
+			common.WriteErrorJSON(w, http.StatusInternalServerError, "failed")
 			return
 		}
-		w.Header().Set("Content-Type", contentTypeJSON)
+		w.Header().Set("Content-Type", common.ContentTypeJSON)
 		json.NewEncoder(w).Encode(resp)
 	}
 }

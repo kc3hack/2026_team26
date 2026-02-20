@@ -12,6 +12,16 @@ type FatigueStore struct{ DB *sql.DB }
 
 func NewFatigueStore(db *sql.DB) *FatigueStore { return &FatigueStore{DB: db} }
 
+func isEmptyUUID(s string) bool {
+	if s == "" {
+		return true
+	}
+	if s == "00000000-0000-0000-0000-000000000000" {
+		return true
+	}
+	return false
+}
+
 func (s *FatigueStore) Create(f *model.FatigueLog) error {
 	if f.ID == "" {
 		f.ID = uuid.New().String()
@@ -20,7 +30,7 @@ func (s *FatigueStore) Create(f *model.FatigueLog) error {
 		f.RecordedAt = time.Now()
 	}
 	var gid interface{}
-	if f.GameID == nil {
+	if f.GameID == nil || isEmptyUUID(*f.GameID) {
 		gid = nil
 	} else {
 		gid = *f.GameID
