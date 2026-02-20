@@ -109,3 +109,15 @@ func (s *TeamService) TeamFatigueList(teamId string, from, to time.Time) (map[st
 	}
 	return list, users, team, nil
 }
+
+func (s *TeamService) CreateInvite(teamId string, limit *time.Time) (string, *time.Time, error) {
+	return s.Store.CreateInvite(teamId, limit)
+}
+
+func (s *TeamService) GetTeamByUserID(userID string) ([]model.Team, error) {
+	team, err := s.Store.GetTeamByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return team, nil
+}
