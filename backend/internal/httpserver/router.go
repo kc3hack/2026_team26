@@ -19,8 +19,8 @@ func NewRouter(authService *service.AuthService, fatigueService *service.Fatigue
 	r.HandleFunc("/ws/fatigue", common.MakeWSHandler(hub))
 	common.POST(r, "/auth/signup", auth.MakeSignupHandler(authService), nil)
 	common.POST(r, "/auth/signin", auth.MakeSigninHandler(authService), nil)
-	common.POST(r, "/auth/refresh", auth.MakeRefreshHandler(authService), authService)
-	common.POST(r, "/auth/logout", auth.MakeLogoutHandler(authService), authService)
-	common.POST(r, "/update", update.MakeCheckUpdateHandler(), nil)
+	common.POST(r, "/auth/refresh", auth.MakeRefreshHandler(authService), nil)
+	common.POST(r, "/auth/logout", auth.MakeLogoutHandler(authService), nil)
+	common.GET(r, "/update", update.MakeCheckUpdateHandler(), nil)
 	return r
 }

@@ -109,14 +109,6 @@ func (s *AuthService) VerifyAccessToken(raw string) (string, error) {
 		return "", errors.New(accessTokenInvalid)
 	}
 
-	expRaw, ok := claims["exp"].(float64)
-	if !ok {
-		return "", errors.New(accessTokenInvalid)
-	}
-	if time.Unix(int64(expRaw), 0).Before(time.Now()) {
-		return "", errors.New("token expired")
-	}
-
 	sub, ok := claims["sub"].(string)
 	if !ok || sub == "" {
 		return "", errors.New(accessTokenInvalid)
