@@ -46,3 +46,10 @@ type Game struct {
 	Name    string `json:"name" db:"name"`
 	Process string `json:"process" db:"process"`
 }
+
+type Team struct {
+	ID        string    `json:"id" db:"id"`
+	TeamName  string    `json:"name" db:"team_name"`
+	OwnerID   string    `json:"created_by" db:"owner_id"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}
