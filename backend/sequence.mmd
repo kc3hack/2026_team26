@@ -52,3 +52,35 @@ sequenceDiagram
   Desktop->>Backend: WS connect /ws/fatigue (Authorization: Bearer <access_token>)
   Backend->>Backend: token 検証
   Backend-->>Desktop: WS 101 / 接続確立
+
+  Note over Frontend, DB: チーム作成
+  Frontend->>Backend: POST: /team/create (Auth)
+  Desktop->>Backend: POST: /team/create (Auth)
+  Backend->>DB: チーム情報登録
+  DB-->>Backend: チーム情報確定
+  Backend-->>Frontend: Res: 200 OK (チームデータ)
+  Backend-->>Desktop: Res: 200 OK (チームデータ)
+
+  Note over Frontend, DB: チーム参加
+  Frontend->>Backend: POST: /team/join (Auth)
+  Desktop->>Backend: POST: /team/join (Auth)
+  Backend->>DB: チーム参加登録
+  DB-->>Backend: チーム参加確定
+  Backend-->>Frontend: Res: 200 OK (チームデータ)
+  Backend-->>Desktop: Res: 200 OK (チームデータ)
+
+  Note over Frontend, DB: チーム脱退
+  Frontend->>Backend: POST: /team/leave (Auth)
+  Desktop->>Backend: POST: /team/leave (Auth)
+  Backend->>DB: チーム脱退登録
+  DB-->>Backend: チーム脱退確定
+  Backend-->>Frontend: Res: 204 No Content
+  Backend-->>Desktop: Res: 204 No Content
+
+  Note over Frontend, DB: チームメンバーの疲労度取得
+  Frontend->>Backend: GET: /team/fatigue?team_id={チームID}&f={ここから}&t={ここまで} (Auth)
+  Desktop->>Backend: GET: /team/fatigue?team_id={チームID}&f={ここから}&t={ここまで} (Auth)
+  Backend->>DB: チームメンバーの疲労度検索
+  DB-->>Backend: チームメンバーの疲労度
+  Backend-->>Frontend: Res: 200 OK (チームメンバーの疲労度)
+  Backend-->>Desktop: Res: 200 OK (チームメンバーの疲労度)

@@ -1,10 +1,11 @@
 erDiagram
   games ||--o{ fatigue_logs : "belongs to"
   users ||--o{ fatigue_logs : "records"
-  %% users }o--o{ team_members : "belongs to"
-  %% teams ||--o{ team_members : "has"
-  %% users ||--o{ game_accounts : "owns"
   users ||--o{ refresh_tokens : "records"
+  users }o--o{ team_members : "belongs to"
+  teams ||--o{ team_members : "has"
+  teams ||--o{ team_tags : "has"
+  %% users ||--o{ game_accounts : "owns"
 
   users {
     uuid id PK
@@ -39,15 +40,24 @@ erDiagram
     string client_info "任意: UA/IP 等"
   }
 
-  %% teams {
-  %%   uuid id PK
-  %%   string team_name
-  %%   uuid owner_id "チーム作成者"
-  %%   timestamp created_at
-  %% }
+  teams {
+    uuid id PK
+    string team_name
+    uuid owner_id "チーム作成者"
+    timestamp created_at
+  }
 
-  %% team_members {
-  %%   uuid team_id PK, FK
-  %%   uuid user_id PK, FK
-  %%   timestamp joined_at
-  %% }
+  team_members {
+    uuid team_id PK, FK
+    uuid user_id PK, FK
+    timestamp joined_at
+  }
+
+  team_tags {
+    uuid id PK
+    uuid team_id FK
+    string tag "ユニークなチームタグ"
+    uuid created_user_id "タグを作成したユーザーID"
+    timestamp limited_until "タグの有効期限、無制限の場合はNULL"
+    timestamp created_at
+  }
