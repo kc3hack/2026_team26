@@ -9,6 +9,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/team26/backend/internal/model"
+	"github.com/team26/backend/internal/model/request"
+	"github.com/team26/backend/internal/model/response"
 	"github.com/team26/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,16 +25,16 @@ func NewAuthService(db *sql.DB, jwtKey []byte) *AuthService {
 	return &AuthService{Users: store.NewUserStore(db), Refresh: store.NewRefreshStore(db), jwtKey: jwtKey}
 }
 
-func (s *AuthService) Signup(req *model.SignupRequest) (*model.AuthResponse, error) {
+func (s *AuthService) Signup(req *request.Signup) (*response.Signup, error) {
 	// create user
 	u, err := s.Users.Create(req.Email, req.Password, req.DisplayName)
 	if err != nil {
 		return nil, err
 	}
-	return &model.AuthResponse{User: *u}, nil
+	return &response.Signup{AuthResponse: model.AuthResponse{User: *u}}, nil
 }
 
-func (s *AuthService) Signin(req *model.SigninRequest) (*model.AuthResponse, string, error) {
+func (s *AuthService) Signin(req *request.Signin) (*response.Signin, string, error) {
 	u, pwHash, err := s.Users.GetByEmail(req.Email)
 	if err != nil {
 		return nil, "", err
@@ -58,28 +60,28 @@ func (s *AuthService) Signin(req *model.SigninRequest) (*model.AuthResponse, str
 	if err != nil {
 		return nil, "", err
 	}
-	return &model.AuthResponse{User: *u, AccessToken: at}, rtRaw, nil
+	return &response.Signin{AuthResponse: model.AuthResponse{User: *u, AccessToken: at}}, rtRaw, nil
 }
 
-func (s *AuthService) RefreshToken(raw string) (*model.AuthResponse, string, error) {
+func (s *AuthService) RefreshToken(raw string) (*response.Refresh, error) {
 	h := sha256.Sum256([]byte(raw))
 	rtHash := hex.EncodeToString(h[:])
 	id, userID, revoked, err := s.Refresh.FindByHash(rtHash)
 	if err != nil || id == "" || revoked {
-		return nil, "", errors.New("invalid refresh token")
+		return nil, errors.New("invalid refresh token")
 	}
 	u, err := s.Users.GetByID(userID)
 	if err != nil {
-		return nil, "", err
+		return nil, errors.New("user not found")
 	}
 	// issue new access token
 	claims := jwt.MapClaims{"sub": u.ID, "exp": time.Now().Add(15 * time.Minute).Unix()}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	at, err := token.SignedString(s.jwtKey)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return &model.AuthResponse{User: *u, AccessToken: at}, raw, nil
+	return &response.Refresh{RefreshToken: raw, AccessToken: at}, nil
 }
 
 func (s *AuthService) Logout(raw string) error {

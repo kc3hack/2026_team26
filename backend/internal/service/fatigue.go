@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/team26/backend/internal/model"
+	"github.com/team26/backend/internal/model/request"
+	"github.com/team26/backend/internal/model/response"
 	"github.com/team26/backend/internal/store"
 	"github.com/team26/backend/internal/ws"
 )
@@ -18,7 +20,7 @@ func NewFatigueService(db *sql.DB, hub *ws.Hub) *FatigueService {
 	return &FatigueService{Store: store.NewFatigueStore(db), Hub: hub}
 }
 
-func (s *FatigueService) Create(req *model.FatigueCreateRequest) (*model.FatigueCreateResponse, error) {
+func (s *FatigueService) Create(req *request.FatigueCreate) (*response.FatigueCreate, error) {
 	f := &model.FatigueLog{
 		ID:         "",
 		UserID:     req.UserID,
@@ -36,7 +38,7 @@ func (s *FatigueService) Create(req *model.FatigueCreateRequest) (*model.Fatigue
 	if s.Hub != nil {
 		s.Hub.BroadcastAny(f)
 	}
-	return &model.FatigueCreateResponse{ID: f.ID}, nil
+	return &response.FatigueCreate{ID: f.ID}, nil
 }
 
 func (s *FatigueService) List(userID string, from, to time.Time, maxNum int) ([]model.FatigueLog, error) {

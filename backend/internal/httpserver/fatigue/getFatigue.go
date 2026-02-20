@@ -1,4 +1,4 @@
-package httpserver
+package fatigue
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/team26/backend/internal/httpserver/common"
 	"github.com/team26/backend/internal/service"
 )
 
@@ -25,7 +26,7 @@ func setNum(nstr string, defaultInt int) (int, error) {
 	return res, err
 }
 
-func makeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
+func MakeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		uid := q.Get("u")
@@ -34,39 +35,39 @@ func makeListFatigueHandler(svc *service.FatigueService) http.HandlerFunc {
 		nstr := q.Get("n")
 
 		if uid == "" {
-			writeErrorJSON(w, http.StatusBadRequest, "u required")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "u required")
 			return
 		}
 
 		maxNum, err := setNum(nstr, 60*24)
 		if err != nil {
-			writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid n: must be integer")
 			return
 		}
 		if maxNum < 1 {
-			writeErrorJSON(w, http.StatusBadRequest, "invalid n: must be >= 1")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid n: must be >= 1")
 			return
 		}
 
 		fromT, err := strToTime(f, time.Unix(0, 0).UTC())
 		if err != nil {
-			writeErrorJSON(w, http.StatusBadRequest, "invalid f: must be RFC3339 as string")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid f: must be RFC3339 as string")
 			return
 		}
 
 		toT, err := strToTime(t, time.Now().UTC())
 		if err != nil {
-			writeErrorJSON(w, http.StatusBadRequest, "invalid t: must be RFC3339 as string")
+			common.WriteErrorJSON(w, http.StatusBadRequest, "invalid t: must be RFC3339 as string")
 			return
 		}
 
 		list, err := svc.List(uid, fromT, toT, maxNum)
 		if err != nil {
-			writeErrorJSON(w, http.StatusInternalServerError, "failed")
+			common.WriteErrorJSON(w, http.StatusInternalServerError, "failed")
 			return
 		}
 
-		w.Header().Set("Content-Type", contentTypeJSON)
+		w.Header().Set("Content-Type", common.ContentTypeJSON)
 		json.NewEncoder(w).Encode(list)
 	}
 }

@@ -4,20 +4,23 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/team26/backend/internal/httpserver/auth"
+	"github.com/team26/backend/internal/httpserver/common"
+	"github.com/team26/backend/internal/httpserver/fatigue"
+	"github.com/team26/backend/internal/httpserver/update"
 	"github.com/team26/backend/internal/service"
 	"github.com/team26/backend/internal/ws"
 )
 
-// NewRouter builds the HTTP handler tree with injected services.
-func NewRouter(auth *service.AuthService, fatigue *service.FatigueService, hub *ws.Hub) http.Handler {
+func NewRouter(authService *service.AuthService, fatigueService *service.FatigueService, hub *ws.Hub) http.Handler {
 	r := mux.NewRouter()
-	r.HandleFunc("/fatigue", makeCreateFatigueHandler(fatigue)).Methods("POST")
-	r.HandleFunc("/fatigue", makeListFatigueHandler(fatigue)).Methods("GET")
-	r.HandleFunc("/ws/fatigue", makeWSHandler(hub))
-	r.HandleFunc("/auth/signup", makeSignupHandler(auth)).Methods("POST")
-	r.HandleFunc("/auth/signin", makeSigninHandler(auth)).Methods("POST")
-	r.HandleFunc("/auth/refresh", makeRefreshHandler(auth)).Methods("POST")
-	r.HandleFunc("/auth/logout", makeLogoutHandler(auth)).Methods("POST")
-	r.HandleFunc("/update", makeCheckUpdateHandler()).Methods("GET")
+	r.HandleFunc("/fatigue", fatigue.MakeCreateFatigueHandler(fatigueService)).Methods("POST")
+	r.HandleFunc("/fatigue", fatigue.MakeListFatigueHandler(fatigueService)).Methods("GET")
+	r.HandleFunc("/ws/fatigue", common.MakeWSHandler(hub))
+	r.HandleFunc("/auth/signup", auth.MakeSignupHandler(authService)).Methods("POST")
+	r.HandleFunc("/auth/signin", auth.MakeSigninHandler(authService)).Methods("POST")
+	r.HandleFunc("/auth/refresh", auth.MakeRefreshHandler(authService)).Methods("POST")
+	r.HandleFunc("/auth/logout", auth.MakeLogoutHandler(authService)).Methods("POST")
+	r.HandleFunc("/update", update.MakeCheckUpdateHandler()).Methods("GET")
 	return r
 }
