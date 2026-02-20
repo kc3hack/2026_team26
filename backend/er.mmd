@@ -57,7 +57,7 @@ erDiagram
     uuid id PK
     uuid team_id FK
     string tag "ユニークなチームタグ"
-    timestamp created_user_id "タグを作成したユーザーID"
+    uuid created_user_id "タグを作成したユーザーID"
     timestamp limited_until "タグの有効期限、無制限の場合はNULL"
     timestamp created_at
   }
