@@ -110,3 +110,47 @@ func (s *TeamStore) ListMembers(teamId string) ([]string, error) {
 	}
 	return members, nil
 }
+
+func (s *TeamStore) CreateInvite(teamId, userID string, limit *time.Time) (string, *time.Time, error) {
+	inviteCode := uuid.New().String()
+	tagID := uuid.New().String()
+	_, err := s.DB.Exec(
+		`INSERT INTO team_tags (id,team_id,tag,created_user_id,limited_until) VALUES ($1,$2,$3,$4,$5)`,
+		tagID, teamId, inviteCode, userID, limit,
+	)
+	return inviteCode, limit, err
+}
+
+func (s *TeamStore) GetTeamByUserID(userID string) ([]model.Team, error) {
+	// team_members から user_id に対応する team_id を取得
+	rows, err := s.DB.Query(`SELECT team_id FROM team_members WHERE user_id=$1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teamIDs []string
+	for rows.Next() {
+		var teamID string
+		if err := rows.Scan(&teamID); err != nil {
+			return nil, err
+		}
+		teamIDs = append(teamIDs, teamID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 各 team_id に対応する Team を取得
+	var teams []model.Team
+	for _, teamID := range teamIDs {
+		team, err := s.GetByTeamID(teamID)
+		if err != nil {
+			return nil, err
+		}
+		teams = append(teams, *team)
+	}
+
+	return teams, nil
+}
