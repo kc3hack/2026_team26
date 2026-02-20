@@ -9,7 +9,11 @@ tags:
   - name: Auth
     description: Authentication
   - name: Fatigue
-    description: Fatigue logging and retrieval
+    description: 疲労度関係
+  - name: Updates
+    description: アップデートの確認
+  - name: Team
+    description: チーム情報・チーム全体の疲労度など
 security:
   - bearerAuth: []
 paths:
@@ -108,27 +112,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: u
-          in: query
-          required: true
-          description: User UUID
-          schema:
-            type: string
-            format: uuid
-        - name: f
-          in: query
-          required: true
-          description: From timestamp (inclusive)
-          schema:
-            type: string
-            format: date-time
-        - name: t
-          in: query
-          required: true
-          description: To timestamp (inclusive)
-          schema:
-            type: string
-            format: date-time
+        - $ref: "#/components/parameters/UserFatigueQuery"
+        - $ref: "#/components/parameters/FromTimestampQuery"
+        - $ref: "#/components/parameters/ToTimestampQuery"
       responses:
         "200":
           description: Fatigue logs
@@ -148,6 +134,94 @@ paths:
         "101":
           description: Switching Protocols
       x-websocket: true
+  /team/create:
+    post:
+      summary: Create team
+      tags:
+        - Team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+      responses:
+        "200":
+          description: Created team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamCreateResponse"
+  /team/join:
+    post:
+      summary: Join team
+      tags:
+        - Team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamJoinRequest"
+      responses:
+        "200":
+          description: Joined team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamJoinResponse"
+  /team/leave:
+    post:
+      summary: Leave team
+      tags:
+        - Team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamLeaveRequest"
+      responses:
+        "204":
+          description: Left team
+  /team/fatigue:
+    get:
+      summary: Get team fatigue logs
+      tags:
+        - Team
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TeamFatigueQuery"
+        - $ref: "#/components/parameters/FromTimestampQuery"
+        - $ref: "#/components/parameters/ToTimestampQuery"
+        - $ref: "#/components/parameters/MaxNumberQuery"
+      responses:
+        "200":
+          description: Fatigue logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamFatigueResponse"
+  /update:
+    get:
+      summary: check newest version
+      tags:
+        - Updates
+      description: アップデートの確認用
+      responses:
+        "200":
+          description: 正常時
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
 components:
   schemas:
     SignupRequest:
@@ -155,6 +229,7 @@ components:
       required:
         - email
         - password
+        - display_name
       properties:
         email:
           type: string
@@ -211,7 +286,6 @@ components:
       type: object
       required:
         - user_id
-        - game_id
         - face_score
         - voice_score
       properties:
@@ -298,6 +372,138 @@ components:
       properties:
         refresh_token:
           type: string
+    UpdateResponse:
+      type: object
+      properties:
+        current:
+          type: string
+          format: version
+          description: 現在の最終バージョン
+        support:
+          type: array
+          description: サポートしているバージョンのリスト
+          items:
+            type: string
+            format: version
+    TeamData:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: チーム名
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+          description: チーム作成者のユーザID
+    TeamCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: チーム名
+    TeamCreateResponse:
+      $ref: "#/components/schemas/TeamData"
+    TeamJoinRequest:
+      type: object
+      required:
+        - team_tag
+      properties:
+        team_tag:
+          type: string
+          description: チーム参加用のタグ
+    TeamJoinResponse:
+      $ref: "#/components/schemas/TeamData"
+    TeamLeaveRequest:
+      type: object
+      required:
+        - team_id
+      properties:
+        team_id:
+          type: string
+          format: uuid
+          description: 退出するチームのID
+    TeamFatigueResponse:
+      type: object
+      required:
+        - team_data
+        - team_user
+        - fatigue_logs
+      properties:
+        team_data:
+          $ref: "#/components/schemas/TeamData"
+        team_user:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        fatigue_logs:
+          type: object
+          description: User ID (UUID) をキーとした疲労度ログの配列
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/FatigueLog"
+
+    ErrorResponse:
+      type: object
+      required:
+        - errorMessage
+      properties:
+        errorMessage:
+          type: string
+          description: エラーメッセージ
+  parameters:
+    UserFatigueQuery:
+      name: u
+      in: query
+      required: true
+      description: User UUID
+      schema:
+        type: string
+        format: uuid
+    FromTimestampQuery:
+      name: f
+      in: query
+      required: false
+      description: From timestamp (inclusive)
+      schema:
+        type: string
+        format: date-time
+    ToTimestampQuery:
+      name: t
+      in: query
+      required: false
+      description: To timestamp (inclusive)
+      schema:
+        type: string
+        format: date-time
+    MaxNumberQuery:
+      name: n
+      in: query
+      required: false
+      description: Max Number of responses
+      schema:
+        type: integer
+        minimum: 1
+    TeamFatigueQuery:
+      name: team_id
+      in: query
+      required: true
+      description: チーム全体の疲労度を取得するチームのID
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     bearerAuth:
       type: http

@@ -11,6 +11,7 @@ module.exports = {
     sourceType: 'module',
     ecmaFeatures: { jsx: true },
     project: ['./tsconfig.app.json', './tsconfig.node.json'],
+    tsconfigRootDir: __dirname,
   },
   plugins: ['react', '@typescript-eslint', 'react-hooks'],
   extends: [
@@ -26,7 +27,10 @@ module.exports = {
   },
   rules: {
     'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
     'react/react-in-jsx-scope': 'off',
   },
-}
+};
