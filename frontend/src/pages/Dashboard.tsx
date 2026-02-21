@@ -17,18 +17,25 @@ import type MeRes from '../types/response/meRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
+interface ChartData {
+  time: string;
+  face_score: number;
+  voice_score: number;
+}
+
 interface DashboardProps {
   token: string;
   logout: () => Promise<void>;
   userId: string | null;
 }
 
+
 export default function Dashboard({ token }: DashboardProps) {
   const navigate = useNavigate(); // 追加: 画面遷移用
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);

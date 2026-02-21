@@ -18,7 +18,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type FatigueCreateReq from '../types/request/fatigueCreateReq';
-import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
+import type FatigueCreateRes from '../types/response/fatigueCreateRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
