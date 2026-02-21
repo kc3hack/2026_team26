@@ -17,6 +17,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
+import TeamFatigueChart from '../components/TeamFatigueChart';
 import TeamInvite from '../components/teamInvite';
 import API from '../lib/axios';
 import type TeamCreateReq from '../types/request/teamCreateReq';
@@ -409,7 +410,7 @@ export default function TeamPage(props: TeamProps) {
                             {member.display_name} {member.id === props.userId && '(あなた)'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {team.fatigue_logs[member.id][-1].recorded_at
+                            {team.fatigue_logs[member.id]?.[-1]?.recorded_at
                               ? new Date(team.fatigue_logs[member.id][-1].recorded_at).toLocaleString()
                               : '記録なし'}
                           </Typography>
@@ -418,15 +419,18 @@ export default function TeamPage(props: TeamProps) {
 
                       {/* ステータスチップ */}
                       <Chip
-                        label={getStatusLabel(team.fatigue_logs[member.id][-1].face_score)}
-                        color={getStatusColor(team.fatigue_logs[member.id][-1].face_score) as StatusColor}
-                        variant={team.fatigue_logs[member.id][-1].face_score === undefined ? 'outlined' : 'filled'}
+                        label={getStatusLabel(team.fatigue_logs[member.id]?.[-1]?.face_score)}
+                        color={getStatusColor(team.fatigue_logs[member.id]?.[-1]?.face_score) as StatusColor}
+                        variant={team.fatigue_logs[member.id]?.[-1]?.face_score === undefined ? 'outlined' : 'filled'}
                       />
                     </CardContent>
                   </Card>
                 </Box>
               ))}
-            </Box>
+              </Box>
+              <Box>
+                <TeamFatigueChart teamData={team} />
+              </Box>
           </>
         )}
       </Container>

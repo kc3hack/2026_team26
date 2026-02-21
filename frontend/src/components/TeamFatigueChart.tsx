@@ -14,12 +14,17 @@ import type TeamFatigueRes from '../types/response/teamFatigueRes';
 // メンバーごとのグラフ線の色（最大7色、それ以上はループ）
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F', '#FFBB28', '#FF8042'];
 
-export default function TeamFatigueChart(props: TeamFatigueRes) {
+type Props = {
+  teamData: TeamFatigueRes
+}
+
+export default function TeamFatigueChart(props: Props) {
   // 1. バラバラの記録時間をひとつの時系列データにまとめる処理
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const timeMap = new Map<string, any>();
 
-  props.team_user.forEach((user) => {
-    const logs = props.fatigue_logs[user.id] || [];
+  props.teamData.team_user.forEach((user) => {
+    const logs = props.teamData.fatigue_logs[user.id] || [];
     logs.forEach((log) => {
       const date = new Date(log.recorded_at);
       // X軸の表示用（例: 2/22 10:00）
@@ -60,7 +65,7 @@ export default function TeamFatigueChart(props: TeamFatigueRes) {
               <YAxis domain={[0, 100]} />
               <Tooltip />
               <Legend />
-              {props.team_user.map((user, index) => (
+              {props.teamData.team_user.map((user, index) => (
                 <Line
                   key={user.id}
                   type="monotone"
