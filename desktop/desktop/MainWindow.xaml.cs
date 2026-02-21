@@ -144,7 +144,11 @@ namespace desktop
                     _videoClient = new VideoStreamClient();
                     _videoClient.OnFrame += (s, ev) =>
                     {
-                        Dispatcher.Invoke(() => imageDisplay.Source = ev.Image);
+                        Dispatcher.Invoke(() =>
+                        {
+                            imageDisplay.Source = ev.Image;
+                            try { faceScoreText.Text = $"Face: {ev.FaceScore:F1}"; } catch { }
+                        });
                     };
                     await _videoClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/video"));
                     connectButton.Content = "Disconnect";

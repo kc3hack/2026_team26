@@ -158,7 +158,12 @@ async def ws_video(websocket: WebSocket):
                 continue
 
             b64 = base64.b64encode(frame_bytes).decode('ascii')
-            payload = json.dumps({"image_b64": b64})
+            # estimate face fatigue for this frame
+            try:
+                face_score, faces = estimate_fatigue_from_face(f)
+            except Exception:
+                face_score, faces = 0.0, []
+            payload = json.dumps({"image_b64": b64, "face_score": face_score, "faces": faces})
             try:
                 await websocket.send_text(payload)
             except Exception:
