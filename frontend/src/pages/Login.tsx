@@ -55,7 +55,7 @@ export default function Login(props: LoginProps) {
       const body: SigninReq = { email, password };
       let res = await API.client().post<SigninRes>('/auth/signin', body);
       if (res.status === 401) {
-        await API.tokenRefresh()
+        await API.tokenRefresh();
         res = await API.client().post<SigninRes>('/auth/signin', body);
       }
       const token = res.data.access_token;
