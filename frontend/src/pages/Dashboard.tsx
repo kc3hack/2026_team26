@@ -2,15 +2,28 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import {
   Alert,
   AppBar,
-  Box, Card, CardContent, CircularProgress, Container,
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
   IconButton,
   Toolbar,
-  Typography
+  Typography,
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import type FatigueListRes from '../types/response/fatigueListRes';
 import type MeRes from '../types/response/meRes';
@@ -29,7 +42,6 @@ interface DashboardProps {
   userId: string | null;
 }
 
-
 export default function Dashboard({ token }: DashboardProps) {
   const navigate = useNavigate(); // 追加: 画面遷移用
 
@@ -43,15 +55,15 @@ export default function Dashboard({ token }: DashboardProps) {
 
     try {
       const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const myUserId = meRes.data.user_data.id;
 
       const fatigueRes = await axios.get<FatigueListRes>(`${API_URL}/fatigue?u=${myUserId}&n=10`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const formattedData = (fatigueRes.data.items || []).map(log => {
+      const formattedData = (fatigueRes.data.items || []).map((log) => {
         const date = new Date(log.recorded_at);
         return {
           time: `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`,
@@ -61,7 +73,6 @@ export default function Dashboard({ token }: DashboardProps) {
       });
 
       setChartData(formattedData.reverse());
-
     } catch (error) {
       console.error(error);
       setErrorMsg('データの取得に失敗しました。');
@@ -76,7 +87,18 @@ export default function Dashboard({ token }: DashboardProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          width: '100vw',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -84,16 +106,17 @@ export default function Dashboard({ token }: DashboardProps) {
 
   return (
     // ▼ 修正: position="absolute" と width="100vw" で元の制限を突破して画面いっぱいに広げる
-    <Box sx={{
-      minHeight: '100vh',
-      bgcolor: '#f5f7fa',
-      width: '100vw',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      overflowX: 'hidden' // 横スクロールバーを出さないための処理
-    }}>
-
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f7fa',
+        width: '100vw',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        overflowX: 'hidden', // 横スクロールバーを出さないための処理
+      }}
+    >
       {/* ▼ 追加: メニューに戻るためのヘッダー（AppBar） ▼ */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
@@ -109,7 +132,9 @@ export default function Dashboard({ token }: DashboardProps) {
       {/* ▼ コンテンツ部分 ▼ */}
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && (
-          <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {errorMsg}
+          </Alert>
         )}
 
         <Card elevation={2} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, width: '100%' }}>
@@ -120,7 +145,9 @@ export default function Dashboard({ token }: DashboardProps) {
 
             {chartData.length === 0 ? (
               <Box sx={{ p: 6, textAlign: 'center' }}>
-                <Typography color="text.secondary" variant="h6">まだ疲労度の記録がありません。</Typography>
+                <Typography color="text.secondary" variant="h6">
+                  まだ疲労度の記録がありません。
+                </Typography>
               </Box>
             ) : (
               <Box sx={{ width: '100%', height: 400, mt: 4 }}>

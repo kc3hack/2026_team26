@@ -1,6 +1,6 @@
-import type FatigueLog from "../fatigueLog";
-import type Team from "../team";
-import type User from "../user";
+import type FatigueLog from '../fatigueLog';
+import type Team from '../team';
+import type User from '../user';
 
 export default interface TeamFatigueRes {
   team_user: User[];
@@ -9,4 +9,3 @@ export default interface TeamFatigueRes {
     [user_id: string]: FatigueLog[];
   };
 }
-

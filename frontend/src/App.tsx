@@ -89,7 +89,7 @@ function App() {
             // 1. バックエンドに新しいトークンを要求
             const reqBody: RefreshReq = { refresh_token: refreshToken };
             const refreshRes = await axios.post<RefreshRes>(`${API_URL}/auth/refresh`, reqBody, {
-              withCredentials: true // HttpOnly Cookie対応用
+              withCredentials: true, // HttpOnly Cookie対応用
             });
 
             const newAccessToken = refreshRes.data.access_token;
@@ -105,7 +105,6 @@ function App() {
 
             // 4. 新しいトークンを使って、さっき失敗した通信をやり直す！
             return axios(originalRequest);
-
           } catch (refreshError) {
             // リフレッシュ自体が失敗した場合（リフレッシュの期限切れなど）
             console.error('トークンの自動更新に失敗しました', refreshError);
@@ -116,7 +115,7 @@ function App() {
 
         // 401以外のエラーはそのまま投げる
         return Promise.reject(error);
-      }
+      },
     );
 
     // クリーンアップ（コンポーネント再描画時に古い検問所を破棄）
@@ -155,10 +154,10 @@ function App() {
         />
         {/* ▼▼ 追加: 招待URL用の動的ルーティング ▼▼ */}
         <Route
-        path="/invite/:inviteCode"
-        element={
-        token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
-        }
+          path="/invite/:inviteCode"
+          element={
+            token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
+          }
         />
 
         {/* Loginコンポーネントに setRefreshToken も渡す */}
