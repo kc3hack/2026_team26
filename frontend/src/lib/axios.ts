@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
-const baseUrl = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
+const baseUrl = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8080/';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: baseUrl,

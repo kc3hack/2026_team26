@@ -29,5 +29,25 @@ func NewRouter(authService *service.AuthService, fatigueService *service.Fatigue
 	common.POST(r, "/team/invite", team.MakeCreateInviteHandler(teamService), authService)
 	common.GET(r, "/team/fatigue", team.MakeListTeamFatigueHandler(teamService), authService)
 	common.GET(r, "/me", auth.MakeGetMeHandler(authService), authService)
-	return r
+	// Simple CORS middleware: echo Origin and allow credentials.
+	// In production, replace with a stricter allowlist.
+	corsWrapped := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		origin := req.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With")
+		}
+
+		// Handle preflight
+		if req.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		r.ServeHTTP(w, req)
+	})
+
+	return corsWrapped
 }
