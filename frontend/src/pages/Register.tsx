@@ -66,7 +66,7 @@ export default function Register(props: RegisterProps) {
     try {
       let res = await API.client().post<SignupRes>('/auth/signup', req);
       if (res.status === 401) {
-        await API.tokenRefresh()
+        await API.tokenRefresh();
         res = await API.client().post<SignupRes>('/auth/signup', req);
       }
       const data = res.data;

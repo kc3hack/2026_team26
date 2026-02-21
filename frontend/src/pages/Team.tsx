@@ -17,6 +17,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
+import TeamFatigueChart from '../components/TeamFatigueChart';
 import TeamInvite from '../components/teamInvite';
 import API from '../lib/axios';
 import type TeamCreateReq from '../types/request/teamCreateReq';
@@ -27,22 +28,12 @@ import type ApiErrorResponse from '../types/response/errorRes';
 import type MeRes from '../types/response/meRes'; // 追加
 import type TeamFatigueRes from '../types/response/teamFatigueRes';
 import type TeamInviteRes from '../types/response/teamInviteRes';
-import type User from '../types/user';
-
-interface TeamUI {
-  id: string;
-  name: string;
-  members: {
-    user_id: string;
-    display_name: string;
-    latest_face_score?: number;
-    last_updated?: string;
-  }[];
-}
 
 interface TeamProps {
   userId: string;
 }
+
+type StatusColor = 'default' | 'error' | 'warning' | 'success';
 
 // 🚨 修正3: token はこの「TeamPage」コンポーネントの中でしか使えません！
 // 以下すべての処理を必ずこの中に入れます。
@@ -50,7 +41,7 @@ export default function TeamPage(props: TeamProps) {
   const { inviteCode } = useParams<{ inviteCode: string }>();
 
   // 状態管理 (新しく作った TeamUI を使うように修正)
-  const [team, setTeam] = useState<TeamUI | null>(null);
+  const [team, setTeam] = useState<TeamFatigueRes | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
@@ -80,7 +71,6 @@ export default function TeamPage(props: TeamProps) {
 
       // 所属チームがない場合は、未所属画面を表示
       if (!myTeams || myTeams.length === 0) {
-        setTeam(null);
         setLoading(false);
         return;
       }
@@ -89,37 +79,19 @@ export default function TeamPage(props: TeamProps) {
       const myTeamId = myTeams[0].id;
 
       // 2. チームの疲労度データと、招待コードを「同時に」取得する
-      let fatiguePromise = await API.authClient().get<TeamFatigueRes>(
+      let fatigues = await API.authClient().get<TeamFatigueRes>(
         `/team/fatigue?team_id=${myTeamId}`,
       );
-      if (fatiguePromise.status === 401) {
+      if (fatigues.status === 401) {
         await API.tokenRefresh();
-        fatiguePromise = await API.authClient().get<TeamFatigueRes>(
+        fatigues = await API.authClient().get<TeamFatigueRes>(
           `/team/fatigue?team_id=${myTeamId}`,
         );
       }
-
-      // API通信を並列で待つ（高速化のため）
-      const [fatigueRes] = await Promise.all([fatiguePromise]);
+      const teamData = fatigues.data;
+      setTeam(teamData);
 
       // 3. 画面表示用のデータに変換
-      const teamData: TeamUI = {
-        id: fatigueRes.data.team_data.id,
-        name: fatigueRes.data.team_data.name,
-        members: fatigueRes.data.team_user.map((user: User) => {
-          const userLogs = fatigueRes.data.fatigue_logs[user.id] || [];
-          const latestLog = userLogs.length > 0 ? userLogs[0] : null;
-
-          return {
-            user_id: user.id,
-            display_name: user.display_name,
-            latest_face_score: latestLog?.face_score,
-            last_updated: latestLog?.recorded_at,
-          };
-        }),
-      };
-
-      setTeam(teamData);
     } catch (error) {
       console.error(error);
       setErrorMsg('チーム情報の取得に失敗しました。');
@@ -168,7 +140,7 @@ export default function TeamPage(props: TeamProps) {
 
   // ▼ チーム参加処理
   const handleJoinTeam = async () => {
-    if (!joinCode || !joinCode.trim()) return;
+    if (!joinCode.trim()) return;
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
@@ -191,12 +163,12 @@ export default function TeamPage(props: TeamProps) {
   const handleLeaveTeam = async () => {
     // チーム情報がない場合、または確認ダイアログで「キャンセル」を押した場合は処理を中断
     if (!team) return;
-    if (!window.confirm(`本当にチーム「${team.name}」から退出しますか？`)) return;
+    if (!window.confirm(`本当にチーム「${team.team_data.name}」から退出しますか？`)) return;
 
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
-      const req: TeamLeaveReq = { team_id: team.id };
+      const req: TeamLeaveReq = { team_id: team.team_data.id };
       const res = await API.authClient().post('/team/leave', req);
       if (res.status === 401) {
         await API.tokenRefresh();
@@ -377,11 +349,11 @@ export default function TeamPage(props: TeamProps) {
                     Current Team
                   </Typography>
                   <Typography variant="h4" fontWeight="bold">
-                    {team.name}
+                    {team.team_data.name}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                  <TeamInvite team_id={team.id} apiInvite={fetchTeamInvite} />
+                  <TeamInvite team_id={team.team_data.id} apiInvite={fetchTeamInvite} />
                   <Button
                     variant="outlined"
                     color="error"
@@ -397,7 +369,7 @@ export default function TeamPage(props: TeamProps) {
             </Paper>
 
             <Typography variant="h6" gutterBottom sx={{ ml: 1, mb: 2, fontWeight: 'bold' }}>
-              メンバーの状況 ({team.members.length}名)
+              メンバーの状況 ({team.team_user.length}名)
             </Typography>
 
             {/* 【修正】レスポンシブなグリッドレイアウト設定 */}
@@ -414,8 +386,8 @@ export default function TeamPage(props: TeamProps) {
                 gap: 2,
               }}
             >
-              {team.members.map((member) => (
-                <Box key={member.user_id}>
+              {team.team_user.map((member) => (
+                <Box key={member.id}>
                   <Card elevation={2}>
                     <CardContent
                       sx={{
@@ -427,7 +399,7 @@ export default function TeamPage(props: TeamProps) {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
                           sx={{
-                            bgcolor: member.user_id === props.userId ? '#667eea' : '#e0e0e0',
+                            bgcolor: member.id === props.userId ? '#667eea' : '#e0e0e0',
                             mr: 2,
                           }}
                         >
@@ -435,11 +407,11 @@ export default function TeamPage(props: TeamProps) {
                         </Avatar>
                         <Box>
                           <Typography variant="subtitle1" fontWeight="bold">
-                            {member.display_name} {member.user_id === props.userId && '(あなた)'}
+                            {member.display_name} {member.id === props.userId && '(あなた)'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {member.last_updated
-                              ? new Date(member.last_updated).toLocaleString()
+                            {team.fatigue_logs[member.id]?.[-1]?.recorded_at
+                              ? new Date(team.fatigue_logs[member.id][-1].recorded_at).toLocaleString()
                               : '記録なし'}
                           </Typography>
                         </Box>
@@ -447,21 +419,18 @@ export default function TeamPage(props: TeamProps) {
 
                       {/* ステータスチップ */}
                       <Chip
-                        label={getStatusLabel(member.latest_face_score)}
-                        color={
-                          getStatusColor(member.latest_face_score) as
-                            | 'default'
-                            | 'error'
-                            | 'warning'
-                            | 'success'
-                        }
-                        variant={member.latest_face_score === undefined ? 'outlined' : 'filled'}
+                        label={getStatusLabel(team.fatigue_logs[member.id]?.[-1]?.face_score)}
+                        color={getStatusColor(team.fatigue_logs[member.id]?.[-1]?.face_score) as StatusColor}
+                        variant={team.fatigue_logs[member.id]?.[-1]?.face_score === undefined ? 'outlined' : 'filled'}
                       />
                     </CardContent>
                   </Card>
                 </Box>
               ))}
-            </Box>
+              </Box>
+              <Box>
+                <TeamFatigueChart teamData={team} />
+              </Box>
           </>
         )}
       </Container>
