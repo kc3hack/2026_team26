@@ -23,7 +23,6 @@ import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
 // 【修正】DUMMY_GAME_ID の定義を削除しました
 
 interface MeasureProps {
-  readonly token: string | null;
   readonly userId: string | null;
 }
 
@@ -59,7 +58,7 @@ export default function Measure(props: MeasureProps) {
 
   // ▼ 測定とデータ送信を行う関数
   const measureAndSend = useCallback(async () => {
-    if (!props.token || !props.userId) return;
+    if (!props.userId) return;
 
     const dummyFaceScore = Math.floor(Math.random() * 100);
     const dummyVoiceScore = Math.floor(Math.random() * 100);
@@ -87,7 +86,7 @@ export default function Measure(props: MeasureProps) {
       console.error('送信エラー:', error);
       setLogs((prev) => ['送信失敗...', ...prev.slice(0, 4)]);
     }
-  }, [props.token, props.userId]);
+  }, [props.userId]);
 
   // ▼ 録画状態の管理
   useEffect(() => {

@@ -13,17 +13,10 @@ import type LogoutRequest from './types/request/logoutReq';
 
 function App() {
   // トークン管理 (access_token と refresh_token 両方を保存)
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
   const [refreshToken, setRefreshToken] = useState<string | null>(
     localStorage.getItem('refresh_token'),
   );
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('user_id'));
-
-  // トークン保存処理
-  useEffect(() => {
-    if (token) localStorage.setItem('auth_token', token);
-    else localStorage.removeItem('auth_token');
-  }, [token]);
 
   // リフレッシュトークン保存処理
   useEffect(() => {
@@ -50,10 +43,8 @@ function App() {
       console.error('ログアウトAPIの呼び出しに失敗しましたが、ローカルデータは削除します', error);
     } finally {
       // 成功・失敗に関わらずローカル情報は消す
-      setToken(null);
       setRefreshToken(null);
       setUserId(null);
-      localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_id');
     }
@@ -62,13 +53,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={token ? <Menu logout={logout} /> : <Navigate to="/login" />} />
+        <Route path="/" element={userId ? <Menu logout={logout} /> : <Navigate to="/login" />} />
 
         <Route
           path="/dashboard"
           element={
-            token ? (
-              <Dashboard token={token} logout={logout} userId={userId} />
+            userId ? (
+              <Dashboard logout={logout} userId={userId} />
             ) : (
               <Navigate to="/login" />
             )
@@ -77,20 +68,20 @@ function App() {
 
         <Route
           path="/measure"
-          element={token ? <Measure token={token} userId={userId} /> : <Navigate to="/login" />}
+          element={userId ? <Measure userId={userId} /> : <Navigate to="/login" />}
         />
 
         <Route
           path="/team"
           element={
-            token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
+            userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />
           }
         />
         {/* ▼▼ 追加: 招待URL用の動的ルーティング ▼▼ */}
         <Route
         path="/invite/:inviteCode"
         element={
-        token && userId ? <TeamPage token={token} userId={userId} /> : <Navigate to="/login" />
+        userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />
         }
         />
 
@@ -98,14 +89,13 @@ function App() {
         <Route
           path="/login"
           element={
-            <Login setToken={setToken} setRefreshToken={setRefreshToken} setUserId={setUserId} />
+            <Login setRefreshToken={setRefreshToken} setUserId={setUserId} />
           }
         />
         <Route
           path="/register"
           element={
             <Register
-              setAccessToken={setToken}
               setRefreshToken={setRefreshToken}
               setUserId={setUserId}
             />

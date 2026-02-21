@@ -36,7 +36,6 @@ const theme = createTheme({
 });
 
 interface LoginProps {
-  readonly setToken: (_token: string) => void;
   readonly setRefreshToken: (_refreshToken: string) => void; // 追加
   readonly setUserId: (_userId: string) => void;
 }
@@ -56,7 +55,7 @@ export default function Login(props: LoginProps) {
     try {
       const body: SigninReq = { email, password };
       const res = await apiClient.post<SigninRes>("/auth/signin", body);
-      props.setToken(res.data.access_token);
+      // access_token is set as HttpOnly cookie by the server. Store refresh_token and user id only.
       props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
       props.setUserId(res.data.user.id);
       navigate('/');
@@ -188,8 +187,8 @@ export default function Login(props: LoginProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
-                InputLabelProps={{ sx: { fontSize: '1rem' } }}
+                // InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
+                // InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />
               <TextField
                 margin="normal"
@@ -199,8 +198,8 @@ export default function Login(props: LoginProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
-                InputLabelProps={{ sx: { fontSize: '1rem' } }}
+                // InputProps={{ sx: { height: 56, fontSize: '1.1rem' } }}
+                // InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />
               <Button
                 type="submit"

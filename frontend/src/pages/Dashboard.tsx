@@ -26,7 +26,6 @@ import type FatigueLog from '../types/fatigueLog';
 import type FatigueListRes from '../types/responce/fatigueListRes';
 
 interface DashboardProps {
-  readonly token: string;
   readonly logout: () => void;
   readonly userId: string | null;
 }
@@ -89,7 +88,7 @@ export default function Dashboard(props: DashboardProps) {
     } catch (error) {
       console.error('データ取得失敗', error);
     }
-  }, [props.token, props.userId]);
+  }, [props.userId]);
 
   useEffect(() => {
     fetchData();

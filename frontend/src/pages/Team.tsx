@@ -29,9 +29,10 @@ import apiClient from '../lib/axios';
 import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
 
 interface TeamProps {
-  readonly token: string;
   readonly userId: string;
 }
+
+type StatusCode = 'default' | 'error' | 'warning' | 'success'
 
 export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ export default function TeamPage(props: TeamProps) {
     } finally {
       setLoading(false);
     }
-  }, [props.token]);
+  }, []);
 
   useEffect(() => {
     fetchTeamData();
@@ -196,7 +197,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームを新規作成
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
+                <Typography variant="body2" color="text.secondary" align="center">
                   新しいチームを作成し、リーダーとしてメンバーを招待します。
                 </Typography>
                 <TextField
@@ -234,7 +235,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームに参加
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
+                <Typography variant="body2" color="text.secondary" align="center">
                   共有された「招待コード」を入力して、既存のチームに参加します。
                 </Typography>
                 <TextField
@@ -347,11 +348,7 @@ export default function TeamPage(props: TeamProps) {
                       <Chip
                         label={getStatusLabel(member.latest_face_score)}
                         color={
-                          getStatusColor(member.latest_face_score) as
-                            | 'default'
-                            | 'error'
-                            | 'warning'
-                            | 'success'
+                          getStatusColor(member.latest_face_score) as StatusCode
                         }
                         variant={member.latest_face_score === undefined ? 'outlined' : 'filled'}
                       />
