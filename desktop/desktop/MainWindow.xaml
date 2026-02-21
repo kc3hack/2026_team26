@@ -33,6 +33,7 @@
             <ProgressBar x:Name="volumeBar" Minimum="0" Maximum="1" Height="20" Width="200" RenderTransformOrigin="0.539,1.237"/>
             <TextBlock x:Name="faceScoreText" Text="Face: --" FontSize="16" Foreground="Black"/>
             <TextBlock x:Name="audioScoreText" Text="Voice: --" FontSize="16" Foreground="Black"/>
+            <Button x:Name="sendFatigueButton" Content="Send Fatigue" Width="120" Margin="8,0,0,0" Click="SendFatigueButton_Click" />
         </StackPanel>
     </Grid>
 </Window>
