@@ -120,7 +120,7 @@ function App() {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, [refreshToken]);
+  }, [refreshToken, logout]);
   // ▲▲ 追加ここまで ▲▲
 
   return (
