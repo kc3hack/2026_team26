@@ -32,9 +32,15 @@ namespace desktop
                 c.BaseAddress = new Uri("http://localhost:8080");
             });
 
+            // In-app device service for native capture (replaces Python local service)
+            services.AddSingleton<IDeviceService, InAppDeviceService>();
+
             // 2. Service層
             services.AddTransient<ITeamService, TeamService>();
-            services.AddTransient<IFatigueService, FatigueService>();
+            services.AddHttpClient<IFatigueService, FatigueService>(c =>
+            {
+                c.BaseAddress = new Uri("http://localhost:8080");
+            });
             services.AddTransient<IUpdateService, UpdateService>();
 
             // 3. Usecase層
