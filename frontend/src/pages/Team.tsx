@@ -1,9 +1,8 @@
 import {
   AddCircle as AddCircleIcon,
   ArrowBack as ArrowBackIcon,
-  ContentCopy as ContentCopyIcon,
   GroupAdd as GroupAddIcon,
-  Refresh as RefreshIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import {
   Alert,
@@ -25,14 +24,15 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import TeamInvite from '../components/teamInvite';
 import type TeamCreateReq from '../types/request/teamCreateReq';
-import type TeamInviteReq from '../types/request/teamInviteReq'; // 追加
+import type TeamInviteReq from '../types/request/teamInviteReq';
 import type TeamJoinReq from '../types/request/teamJoinReq';
 import type TeamLeaveReq from '../types/request/teamLeaveReq'; // 追加
 import type ApiErrorResponse from '../types/response/errorRes';
 import type MeRes from '../types/response/meRes'; // 追加
 import type TeamFatigueRes from '../types/response/teamFatigueRes';
-import type TeamInviteRes from '../types/response/teamInviteRes'; // 追加
+import type TeamInviteRes from '../types/response/teamInviteRes';
 import type User from '../types/user';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
@@ -40,7 +40,6 @@ const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheepl
 interface TeamUI {
   id: string;
   name: string;
-  invite_code: string;
   members: { user_id: string; display_name: string; latest_face_score?: number; last_updated?: string }[];
 }
 
@@ -97,19 +96,13 @@ export default function TeamPage({ token, userId }: TeamProps) {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const inviteReq: TeamInviteReq = { team_id: myTeamId };
-      const invitePromise = axios.post<TeamInviteRes>(`${API_URL}/team/invite`, inviteReq, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
       // API通信を並列で待つ（高速化のため）
-      const [fatigueRes, inviteRes] = await Promise.all([fatiguePromise, invitePromise]);
+      const [fatigueRes] = await Promise.all([fatiguePromise]);
 
       // 3. 画面表示用のデータに変換
       const teamData: TeamUI = {
         id: fatigueRes.data.team_data.id,
         name: fatigueRes.data.team_data.name,
-        invite_code: inviteRes.data.invite_code, // 本物の招待コード！
         members: fatigueRes.data.team_user.map((user: User) => {
           const userLogs = fatigueRes.data.fatigue_logs[user.id] || [];
           const latestLog = userLogs.length > 0 ? userLogs[0] : null;
@@ -135,6 +128,17 @@ export default function TeamPage({ token, userId }: TeamProps) {
   useEffect(() => {
     fetchTeamData();
   }, [fetchTeamData]);
+  // 招待API通信部分
+  const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
+    const res = await axios.post<TeamInviteRes>(`${API_URL}/team/invite`, req, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.status !== 200) {
+      throw new Error("couldn't get invite code")
+    }
+    const data = res.data;
+    return data;
+  }
 
  // ▼ チーム作成処理
   const handleCreateTeam = async () => {
@@ -205,14 +209,6 @@ export default function TeamPage({ token, userId }: TeamProps) {
       if (data?.message) msg = data.message;
     }
     setErrorMsg(msg);
-  };
-
-  // ▼ 招待コードのコピー
-  const copyCode = () => {
-    if (team) {
-      navigator.clipboard.writeText(team.invite_code);
-      alert('招待コードをコピーしました');
-    }
   };
 
   // スコアに基づく状態判定
@@ -378,16 +374,11 @@ export default function TeamPage({ token, userId }: TeamProps) {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    招待コード
-                  </Typography>
-                  <Chip
-                    label={team.invite_code}
-                    onDelete={copyCode}
-                    deleteIcon={<ContentCopyIcon />}
-                    sx={{ fontWeight: 'bold', fontSize: '1.1rem', py: 2 }}
+                    <TeamInvite
+                      team_id={team.id}
+                      apiInvite={fetchTeamInvite}
                     />
-                  <Button
+                    <Button
                     variant="outlined"
                     color="error"
                     size="small"
