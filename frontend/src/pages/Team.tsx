@@ -25,14 +25,14 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiClient from '../lib/axios';
 import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
 
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
-
 interface TeamProps {
-  readonly token: string;
   readonly userId: string;
 }
+
+type StatusCode = 'default' | 'error' | 'warning' | 'success';
 
 export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function TeamPage(props: TeamProps) {
   const [createName, setCreateName] = useState('');
   const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
   useEffect(() => {
-      setJoinCode(inviteCode);
+    setJoinCode(inviteCode);
   }, [inviteCode]);
 
   // ▼ 自分の所属チーム情報を取得
@@ -55,9 +55,7 @@ export default function TeamPage(props: TeamProps) {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await axios.get<Team>(`${API_URL}/teams/my`, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      const res = await apiClient.get<Team>('/teams/my');
       setTeam(res.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -68,7 +66,7 @@ export default function TeamPage(props: TeamProps) {
     } finally {
       setLoading(false);
     }
-  }, [props.token]);
+  }, []);
 
   useEffect(() => {
     fetchTeamData();
@@ -79,9 +77,7 @@ export default function TeamPage(props: TeamProps) {
     if (!createName) return;
     try {
       const body: CreateTeamRequest = { name: createName };
-      await axios.post<Team>(`${API_URL}/teams`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      await apiClient.post<Team>('/teams', body);
       alert('チームを作成しました！');
       fetchTeamData();
     } catch (error) {
@@ -94,9 +90,7 @@ export default function TeamPage(props: TeamProps) {
     if (!joinCode) return;
     try {
       const body: JoinTeamRequest = { invite_code: joinCode };
-      await axios.post<Team>(`${API_URL}/teams/join`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      await apiClient.post<Team>('/teams/join', body);
       alert('チームに参加しました！');
       fetchTeamData();
     } catch (error) {
@@ -200,7 +194,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームを新規作成
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
+                <Typography variant="body2" color="text.secondary" align="center">
                   新しいチームを作成し、リーダーとしてメンバーを招待します。
                 </Typography>
                 <TextField
@@ -238,7 +232,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームに参加
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
+                <Typography variant="body2" color="text.secondary" align="center">
                   共有された「招待コード」を入力して、既存のチームに参加します。
                 </Typography>
                 <TextField
@@ -350,13 +344,7 @@ export default function TeamPage(props: TeamProps) {
                       {/* ステータスチップ */}
                       <Chip
                         label={getStatusLabel(member.latest_face_score)}
-                        color={
-                          getStatusColor(member.latest_face_score) as
-                            | 'default'
-                            | 'error'
-                            | 'warning'
-                            | 'success'
-                        }
+                        color={getStatusColor(member.latest_face_score) as StatusCode}
                         variant={member.latest_face_score === undefined ? 'outlined' : 'filled'}
                       />
                     </CardContent>
