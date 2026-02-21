@@ -86,8 +86,8 @@ namespace desktop
                 var auds = EnumerateLocalAudioDevices();
                 Dispatcher.Invoke(() =>
                 {
-                    var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
-                    var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                    var devCombo = deviceComboRef ?? this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                    var audCombo = audioComboRef ?? this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
                     if (devCombo != null) devCombo.Items.Clear();
                     if (audCombo != null) audCombo.Items.Clear();
                     foreach (var c in cams)
@@ -183,8 +183,8 @@ namespace desktop
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            if (imageDisplayRef != null) imageDisplayRef.Source = ev.Image;
-                            try { if (faceScoreTextRef != null) faceScoreTextRef.Text = $"Face: {ev.FaceScore:F1}"; } catch { }
+                                    if (imageDisplayRef != null) imageDisplayRef.Source = ev.Image;
+                                    try { if (faceScoreTextRef != null) faceScoreTextRef.Text = $"Face fatigue: {ev.FaceScore:F1}"; } catch { }
                         });
                     };
                     await _videoClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/video"));
@@ -233,7 +233,7 @@ namespace desktop
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            if (audioScoreTextRef != null) audioScoreTextRef.Text = $"Voice: {ev.Score:F1}";
+                            if (audioScoreTextRef != null) audioScoreTextRef.Text = $"Voice fatigue: {ev.Score:F1}";
                             if (volumeBarRef != null) volumeBarRef.Value = Math.Min(1.0, ev.Score / 100.0);
                         });
                     };
