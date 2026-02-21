@@ -74,6 +74,9 @@ function App() {
 
         // 401（認証エラー）で、かつ「まだリフレッシュを試していない」場合
         if (error.response && error.response.status === 401 && !originalRequest._retry) {
+          if (originalRequest.url?.includes('/auth/refresh')) {
+            return Promise.reject(error);
+          }
           originalRequest._retry = true; // 無限ループ防止フラグ
 
           // リフレッシュトークンがない場合は諦めてログアウト
