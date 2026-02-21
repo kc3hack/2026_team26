@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import Dashboard from './pages/Dashboard';
@@ -40,7 +40,7 @@ function App() {
     else localStorage.removeItem('user_id');
   }, [userId]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // サーバーにログアウト通知を送る (refresh_tokenを送付)
       if (refreshToken) {
@@ -61,7 +61,7 @@ function App() {
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_id');
     }
-  };
+  }, [refreshToken]);
 
   // =========================================================================
   // ▼▼ ここから追加: トークン自動更新の「検問所（インターセプター）」 ▼▼
