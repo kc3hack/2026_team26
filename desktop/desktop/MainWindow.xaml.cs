@@ -21,6 +21,30 @@ namespace desktop
 
     public partial class MainWindow : System.Windows.Window
     {
+        // UI control references (resolved at runtime via FindName to avoid depending on generated .g.cs)
+        private System.Windows.Controls.Image imageDisplayRef;
+        private System.Windows.Controls.ProgressBar volumeBarRef;
+        private System.Windows.Controls.TextBlock faceScoreTextRef;
+        private System.Windows.Controls.TextBlock audioScoreTextRef;
+        private System.Windows.Controls.Button connectButtonRef;
+        private System.Windows.Controls.Button audioConnectButtonRef;
+        private System.Windows.Controls.ComboBox deviceComboRef;
+        private System.Windows.Controls.ComboBox audioComboRef;
+
+        // Fallback InitializeComponent implementation that loads the XAML at runtime
+        // This ensures XAML is loaded even if the designer-generated InitializeComponent is not present.
+        private void InitializeComponent()
+        {
+            try
+            {
+                var resourceLocater = new Uri("/desktop;component/MainWindow.xaml", UriKind.Relative);
+                System.Windows.Application.LoadComponent(this, resourceLocater);
+            }
+            catch
+            {
+                // swallow: if LoadComponent fails, the app will continue and FindName lookups will return null
+            }
+        }
         private CameraDevice _camera;
         private AudioDevice _audio;
         private IDeviceService _deviceService;
@@ -30,7 +54,17 @@ namespace desktop
 
         public MainWindow()
         {
+            // Ensure XAML is loaded even if designer-generated InitializeComponent isn't available.
             InitializeComponent();
+            // Resolve named controls from XAML safely
+            deviceComboRef = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+            audioComboRef = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+            imageDisplayRef = this.FindName("imageDisplay") as System.Windows.Controls.Image;
+            volumeBarRef = this.FindName("volumeBar") as System.Windows.Controls.ProgressBar;
+            faceScoreTextRef = this.FindName("faceScoreText") as System.Windows.Controls.TextBlock;
+            audioScoreTextRef = this.FindName("audioScoreText") as System.Windows.Controls.TextBlock;
+            connectButtonRef = this.FindName("connectButton") as System.Windows.Controls.Button;
+            audioConnectButtonRef = this.FindName("audioConnectButton") as System.Windows.Controls.Button;
             _camera = new CameraDevice(0);
             _audio = new AudioDevice();
 
@@ -126,8 +160,8 @@ namespace desktop
             var source = _camera.GetFrameSource();
             if (source != null)
             {
-                imageDisplay.Source = source;
-                volumeBar.Value = _audio.CurrentVolume;
+                if (imageDisplayRef != null) imageDisplayRef.Source = source;
+                if (volumeBarRef != null) volumeBarRef.Value = _audio.CurrentVolume;
             }
         }
 
@@ -135,7 +169,7 @@ namespace desktop
         {
             if (!_connected)
             {
-                var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                var devCombo = deviceComboRef ?? this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
                 var item = devCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                 if (item == null) return;
                 var deviceId = item.Tag as string;
@@ -149,12 +183,12 @@ namespace desktop
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            imageDisplay.Source = ev.Image;
-                            try { faceScoreText.Text = $"Face: {ev.FaceScore:F1}"; } catch { }
+                            if (imageDisplayRef != null) imageDisplayRef.Source = ev.Image;
+                            try { if (faceScoreTextRef != null) faceScoreTextRef.Text = $"Face: {ev.FaceScore:F1}"; } catch { }
                         });
                     };
                     await _videoClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/video"));
-                    connectButton.Content = "Disconnect";
+                    if (connectButtonRef != null) connectButtonRef.Content = "Disconnect";
                     _connected = true;
                 }
                 catch (Exception ex)
@@ -166,7 +200,7 @@ namespace desktop
             {
                 try
                 {
-                    var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                    var devCombo = deviceComboRef ?? this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
                     var item = devCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                     var deviceId = item?.Tag as string;
                     if (_deviceService != null && deviceId != null)
@@ -175,7 +209,7 @@ namespace desktop
                     if (_audioClient != null) await _audioClient.DisconnectAsync();
                 }
                 catch { }
-                connectButton.Content = "Connect";
+                if (connectButtonRef != null) connectButtonRef.Content = "Connect";
                 _connected = false;
             }
         }
@@ -185,7 +219,7 @@ namespace desktop
         {
             if (!_audioConnected)
             {
-                var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                var audCombo = audioComboRef ?? this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
                 var item = audCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                 if (item == null) return;
                 var deviceId = item.Tag as string;
@@ -199,12 +233,12 @@ namespace desktop
                     {
                         Dispatcher.Invoke(() =>
                         {
-                            audioScoreText.Text = $"Voice: {ev.Score:F1}";
-                            volumeBar.Value = Math.Min(1.0, ev.Score / 100.0);
+                            if (audioScoreTextRef != null) audioScoreTextRef.Text = $"Voice: {ev.Score:F1}";
+                            if (volumeBarRef != null) volumeBarRef.Value = Math.Min(1.0, ev.Score / 100.0);
                         });
                     };
                     await _audioClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/audio"));
-                    audioConnectButton.Content = "Disconnect Audio";
+                    if (audioConnectButtonRef != null) audioConnectButtonRef.Content = "Disconnect Audio";
                     _audioConnected = true;
                 }
                 catch (Exception ex)
@@ -216,7 +250,7 @@ namespace desktop
             {
                 try
                 {
-                    var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                    var audCombo = audioComboRef ?? this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
                     var item = audCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                     var deviceId = item?.Tag as string;
                     if (_deviceService != null && deviceId != null)
@@ -224,7 +258,7 @@ namespace desktop
                     if (_audioClient != null) await _audioClient.DisconnectAsync();
                 }
                 catch { }
-                audioConnectButton.Content = "Connect Audio";
+                if (audioConnectButtonRef != null) audioConnectButtonRef.Content = "Connect Audio";
                 _audioConnected = false;
             }
         }
