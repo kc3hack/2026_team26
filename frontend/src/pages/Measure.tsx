@@ -14,13 +14,11 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../lib/axios';
 import type FatigueCreateReq from '../types/request/fatigueCreateReq';
 import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 // 【修正】DUMMY_GAME_ID の定義を削除しました
 
@@ -78,9 +76,7 @@ export default function Measure(props: MeasureProps) {
         recorded_at: new Date().toISOString(),
       };
 
-      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, req, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      await apiClient.post<FatigueCreateRes>("/fatigue", req);
 
       const time = new Date().toLocaleTimeString();
       setLogs((prev) => [

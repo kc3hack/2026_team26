@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
@@ -9,9 +8,8 @@ import Menu from './pages/Menu';
 import Register from './pages/Register';
 import TeamPage from './pages/Team';
 // ▼▼▼ 型定義をインポート (LogoutRequestを追加) ▼▼▼
+import apiClient from './lib/axios';
 import type LogoutRequest from './types/request/logoutReq';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 function App() {
   // トークン管理 (access_token と refresh_token 両方を保存)
@@ -46,7 +44,7 @@ function App() {
           refresh_token: refreshToken,
         };
 
-        await axios.post(`${API_URL}/auth/logout`, req);
+        await apiClient.post("/auth/logout", req);
       }
     } catch (error) {
       console.error('ログアウトAPIの呼び出しに失敗しましたが、ローカルデータは削除します', error);

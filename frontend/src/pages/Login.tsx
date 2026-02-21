@@ -17,11 +17,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../lib/axios';
 import type SigninReq from '../types/request/signinReq';
 import type ApiErrorResponse from '../types/responce/errorRes';
 import type SigninRes from '../types/responce/signinRes';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 const theme = createTheme({
   palette: {
@@ -56,9 +55,7 @@ export default function Login(props: LoginProps) {
 
     try {
       const body: SigninReq = { email, password };
-      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, body,{
-        withCredentials: true
-      });
+      const res = await apiClient.post<SigninRes>("/auth/signin", body);
       props.setToken(res.data.access_token);
       props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
       props.setUserId(res.data.user.id);

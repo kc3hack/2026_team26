@@ -25,9 +25,8 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiClient from '../lib/axios';
 import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface TeamProps {
   readonly token: string;
@@ -55,9 +54,7 @@ export default function TeamPage(props: TeamProps) {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await axios.get<Team>(`${API_URL}/teams/my`, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      const res = await apiClient.get<Team>("/teams/my");
       setTeam(res.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -79,9 +76,10 @@ export default function TeamPage(props: TeamProps) {
     if (!createName) return;
     try {
       const body: CreateTeamRequest = { name: createName };
-      await axios.post<Team>(`${API_URL}/teams`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      const res = await apiClient.post<Team>("/teams", body);
+      if (res.status !== 200) {
+        throw new Error(res.statusText)
+      }
       alert('チームを作成しました！');
       fetchTeamData();
     } catch (error) {
@@ -94,9 +92,7 @@ export default function TeamPage(props: TeamProps) {
     if (!joinCode) return;
     try {
       const body: JoinTeamRequest = { invite_code: joinCode };
-      await axios.post<Team>(`${API_URL}/teams/join`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      await apiClient.post<Team>("/teams/join", body);
       alert('チームに参加しました！');
       fetchTeamData();
     } catch (error) {

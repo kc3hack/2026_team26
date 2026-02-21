@@ -10,7 +10,6 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CartesianGrid,
@@ -22,10 +21,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import apiClient from '../lib/axios';
 import type FatigueLog from '../types/fatigueLog';
 import type FatigueListRes from '../types/responce/fatigueListRes';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface DashboardProps {
   readonly token: string;
@@ -57,8 +55,7 @@ export default function Dashboard(props: DashboardProps) {
 
     try {
       // API 0.1.0 仕様: GET /fatigue?u={userId}&f={start}&t={to}
-      const res = await axios.get<FatigueListRes>(`${API_URL}/fatigue`, {
-        headers: { Authorization: `Bearer ${props.token}` },
+      const res = await apiClient.get<FatigueListRes>("/fatigue", {
         params: { u: props.userId, f: start, t: to },
       });
 
