@@ -19,7 +19,7 @@ using System.Diagnostics;
 namespace desktop
 {
 
-    public partial class MainWindow : Window
+    public partial class MainWindow : System.Windows.Window
     {
         private CameraDevice _camera;
         private AudioDevice _audio;
