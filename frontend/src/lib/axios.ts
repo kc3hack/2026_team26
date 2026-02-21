@@ -51,9 +51,11 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
 
         // retry queued requests
-        const retryPromises = failedQueue.map((f) => apiClient(f.config));
+        const queuedRequests = failedQueue;
         failedQueue = [];
-        await Promise.all(retryPromises);
+        queuedRequests.forEach(({ resolve, reject, config }) => {
+          apiClient(config).then(resolve).catch(reject);
+        });
 
         return apiClient(originalConfig);
       } catch (error_) {

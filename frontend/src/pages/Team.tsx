@@ -77,10 +77,7 @@ export default function TeamPage(props: TeamProps) {
     if (!createName) return;
     try {
       const body: CreateTeamRequest = { name: createName };
-      const res = await apiClient.post<Team>('/teams', body);
-      if (res.status !== 200) {
-        throw new Error(res.statusText);
-      }
+      await apiClient.post<Team>('/teams', body);
       alert('チームを作成しました！');
       fetchTeamData();
     } catch (error) {
