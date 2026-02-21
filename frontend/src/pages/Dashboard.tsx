@@ -1,27 +1,13 @@
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import {
-  Alert,
-  AppBar,
-  Box, Card, CardContent, CircularProgress, Container,
-  IconButton,
-  Toolbar,
-  Typography
-} from '@mui/material';
+import { Alert, Box, Card, CardContent, CircularProgress, Container, Typography } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import FatigueChart, { type ChartData } from '../components/FatigueChart'; // ▼ 追加
+import Header from '../components/Header';
 import type FatigueListRes from '../types/response/fatigueListRes';
 import type MeRes from '../types/response/meRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
-
-interface ChartData {
-  time: string;
-  face_score: number;
-  voice_score: number;
-}
 
 interface DashboardProps {
   token: string;
@@ -29,10 +15,7 @@ interface DashboardProps {
   userId: string | null;
 }
 
-
 export default function Dashboard({ token }: DashboardProps) {
-  const navigate = useNavigate(); // 追加: 画面遷移用
-
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -42,16 +25,19 @@ export default function Dashboard({ token }: DashboardProps) {
     setErrorMsg(null);
 
     try {
+      // ユーザー情報の取得
       const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const myUserId = meRes.data.user_data.id;
 
+      // 疲労度リストの取得
       const fatigueRes = await axios.get<FatigueListRes>(`${API_URL}/fatigue?u=${myUserId}&n=10`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const formattedData = (fatigueRes.data.items || []).map(log => {
+      // データの整形
+      const formattedData = (fatigueRes.data.items || []).map((log) => {
         const date = new Date(log.recorded_at);
         return {
           time: `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`,
@@ -61,7 +47,6 @@ export default function Dashboard({ token }: DashboardProps) {
       });
 
       setChartData(formattedData.reverse());
-
     } catch (error) {
       console.error(error);
       setErrorMsg('データの取得に失敗しました。');
@@ -74,6 +59,7 @@ export default function Dashboard({ token }: DashboardProps) {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // ローディング画面
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0 }}>
@@ -83,37 +69,15 @@ export default function Dashboard({ token }: DashboardProps) {
   }
 
   return (
-    // ▼ 修正: position="absolute" と width="100vw" で元の制限を突破して画面いっぱいに広げる
-    <Box sx={{
-      minHeight: '100vh',
-        width: '100vw',         // ← 追加: 横幅をブラウザ100%に
-        position: 'absolute',   // ← 追加: 元の制限枠から飛び出す
-        top: 0,                 // ← 追加: 上端に合わせる
-        left: 0,                // ← 追加: 左端に合わせる
-        overflowX: 'hidden',    // ← 追加: 横スクロールバーを消す
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f7fa', // 背景色は今のものに合わせてください
-    }}>
+    <Box sx={{ minHeight: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f7fa' }}>
 
-      {/* ▼ 追加: メニューに戻るためのヘッダー（AppBar） ▼ */}
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            ダッシュボード
-          </Typography>
-        </Toolbar>
-      </AppBar>
+      <Header title="ダッシュボード" showBackButton={true} />
 
-      {/* ▼ コンテンツ部分 ▼ */}
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && (
-          <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {errorMsg}
+          </Alert>
         )}
 
         <Card elevation={2} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, width: '100%' }}>
@@ -122,38 +86,9 @@ export default function Dashboard({ token }: DashboardProps) {
               最近のスコア推移
             </Typography>
 
-            {chartData.length === 0 ? (
-              <Box sx={{ p: 6, textAlign: 'center' }}>
-                <Typography color="text.secondary" variant="h6">まだ疲労度の記録がありません。</Typography>
-              </Box>
-            ) : (
-              <Box sx={{ width: '100%', height: 400, mt: 4 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="face_score"
-                      name="顔スコア"
-                      stroke="#8884d8"
-                      strokeWidth={3}
-                      activeDot={{ r: 8 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="voice_score"
-                      name="声スコア"
-                      stroke="#82ca9d"
-                      strokeWidth={3}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
+            {/* ▼ グラフ部分をコンポーネントで呼び出し！ */}
+            <FatigueChart data={chartData} />
+
           </CardContent>
         </Card>
       </Container>
