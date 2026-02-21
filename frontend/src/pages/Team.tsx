@@ -2,7 +2,7 @@ import {
   AddCircle as AddCircleIcon,
   ArrowBack as ArrowBackIcon,
   GroupAdd as GroupAddIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -40,7 +40,12 @@ const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheepl
 interface TeamUI {
   id: string;
   name: string;
-  members: { user_id: string; display_name: string; latest_face_score?: number; last_updated?: string }[];
+  members: {
+    user_id: string;
+    display_name: string;
+    latest_face_score?: number;
+    last_updated?: string;
+  }[];
 }
 
 interface TeamProps {
@@ -76,7 +81,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     try {
       // 1. まずは自分の情報を取得し、所属チームがあるか確認する
       const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const myTeams = meRes.data.user_teams;
@@ -92,9 +97,12 @@ export default function TeamPage({ token, userId }: TeamProps) {
       const myTeamId = myTeams[0].id;
 
       // 2. チームの疲労度データと、招待コードを「同時に」取得する
-      const fatiguePromise = axios.get<TeamFatigueRes>(`${API_URL}/team/fatigue?team_id=${myTeamId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const fatiguePromise = axios.get<TeamFatigueRes>(
+        `${API_URL}/team/fatigue?team_id=${myTeamId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       // API通信を並列で待つ（高速化のため）
       const [fatigueRes] = await Promise.all([fatiguePromise]);
@@ -113,7 +121,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
             latest_face_score: latestLog?.face_score,
             last_updated: latestLog?.recorded_at,
           };
-        })
+        }),
       };
 
       setTeam(teamData);
@@ -131,16 +139,16 @@ export default function TeamPage({ token, userId }: TeamProps) {
   // 招待API通信部分
   const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
     const res = await axios.post<TeamInviteRes>(`${API_URL}/team/invite`, req, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (res.status !== 200) {
-      throw new Error("couldn't get invite code")
+      throw new Error("couldn't get invite code");
     }
     const data = res.data;
     return data;
-  }
+  };
 
- // ▼ チーム作成処理
+  // ▼ チーム作成処理
   const handleCreateTeam = async () => {
     if (!createName.trim()) return;
     setIsActionLoading(true);
@@ -148,7 +156,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     try {
       const req: TeamCreateReq = { name: createName };
       await axios.post(`${API_URL}/team/create`, req, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       fetchTeamData();
     } catch (error) {
@@ -167,7 +175,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     try {
       const req: TeamJoinReq = { team_tag: joinCode };
       await axios.post(`${API_URL}/team/join`, req, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       fetchTeamData();
     } catch (error) {
@@ -189,7 +197,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
     try {
       const req: TeamLeaveReq = { team_id: team.id };
       await axios.post(`${API_URL}/team/leave`, req, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
       fetchTeamData();
@@ -238,7 +246,17 @@ export default function TeamPage({ token, userId }: TeamProps) {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden'}}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f7fa',
+        width: '100vw',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        overflowX: 'hidden',
+      }}
+    >
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
@@ -344,7 +362,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
                   size="large"
                   color="warning"
                   onClick={handleJoinTeam}
-                  disabled={!joinCode || isActionLoading }
+                  disabled={!joinCode || isActionLoading}
                   sx={{ mt: 'auto' }}
                 >
                   参加する
@@ -374,11 +392,8 @@ export default function TeamPage({ token, userId }: TeamProps) {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                    <TeamInvite
-                      team_id={team.id}
-                      apiInvite={fetchTeamInvite}
-                    />
-                    <Button
+                  <TeamInvite team_id={team.id} apiInvite={fetchTeamInvite} />
+                  <Button
                     variant="outlined"
                     color="error"
                     size="small"
