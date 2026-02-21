@@ -22,6 +22,18 @@ func MakeSigninHandler(svc *service.AuthService) http.HandlerFunc {
 			common.WriteErrorJSON(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
+
+		// Set HttpOnly access_token cookie (short-lived). In production set Secure=true.
+		http.SetCookie(w, &http.Cookie{
+			Name:     "access_token",
+			Value:    authResp.AccessToken,
+			HttpOnly: true,
+			Path:     "/",
+			// MaxAge omitted for access token; let token expiry control validity
+			SameSite: http.SameSiteLaxMode,
+			Secure:   false,
+		})
+
 		// attach refresh token in response for client
 		out := struct {
 			response.Signin

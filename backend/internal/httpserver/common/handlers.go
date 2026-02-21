@@ -48,21 +48,21 @@ func MakeWSHandler(h *ws.Hub) http.HandlerFunc {
 // RequireBearerAuth validates Authorization: Bearer <token> and calls the next handler.
 func RequireBearerAuth(authService *service.AuthService, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Prefer Authorization header but fall back to HttpOnly cookie `access_token` for browsers.
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			WriteErrorJSON(w, http.StatusUnauthorized, "missing authorization header")
-			return
-		}
+		var rawToken string
 
 		const bearerPrefix = "Bearer "
-		if !strings.HasPrefix(authHeader, bearerPrefix) {
-			WriteErrorJSON(w, http.StatusUnauthorized, "invalid authorization header")
-			return
+		if authHeader != "" && strings.HasPrefix(authHeader, bearerPrefix) {
+			rawToken = strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
+		} else {
+			if c, err := r.Cookie("access_token"); err == nil {
+				rawToken = c.Value
+			}
 		}
 
-		rawToken := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
 		if rawToken == "" {
-			WriteErrorJSON(w, http.StatusUnauthorized, "invalid authorization header")
+			WriteErrorJSON(w, http.StatusUnauthorized, "missing access token")
 			return
 		}
 
@@ -89,4 +89,51 @@ func POST(r *mux.Router, path string, f http.HandlerFunc, authService *service.A
 		return r.HandleFunc(path, f).Methods("POST")
 	}
 	return r.HandleFunc(path, RequireBearerAuth(authService, f)).Methods("POST")
+}
+
+// RequireOptionalAuth attempts to validate an access token from Authorization header
+// or cookie and, if present and valid, stores `user_id` in the request context.
+// If no token is provided the request proceeds without error (anonymous).
+func RequireOptionalAuth(authService *service.AuthService, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// try to extract token from Authorization header or cookie
+		authHeader := r.Header.Get("Authorization")
+		var rawToken string
+		const bearerPrefix = "Bearer "
+		if authHeader != "" && strings.HasPrefix(authHeader, bearerPrefix) {
+			rawToken = strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
+		} else if c, err := r.Cookie("access_token"); err == nil {
+			rawToken = c.Value
+		}
+
+		if rawToken != "" {
+			if userID, err := authService.VerifyAccessToken(rawToken); err == nil {
+				ctx := context.WithValue(r.Context(), ContextUserIDKey, userID)
+				next(w, r.WithContext(ctx))
+				return
+			}
+			// If token present but invalid, respond with unauthorized
+			WriteErrorJSON(w, http.StatusUnauthorized, "invalid access token")
+			return
+		}
+
+		// no token: proceed as anonymous
+		next(w, r)
+	}
+}
+
+// GETOptional registers a GET route that accepts either anonymous or authenticated requests.
+func GETOptional(r *mux.Router, path string, f http.HandlerFunc, authService *service.AuthService) *mux.Route {
+	if authService == nil {
+		return r.HandleFunc(path, f).Methods("GET")
+	}
+	return r.HandleFunc(path, RequireOptionalAuth(authService, f)).Methods("GET")
+}
+
+// POSTOptional registers a POST route that accepts either anonymous or authenticated requests.
+func POSTOptional(r *mux.Router, path string, f http.HandlerFunc, authService *service.AuthService) *mux.Route {
+	if authService == nil {
+		return r.HandleFunc(path, f).Methods("POST")
+	}
+	return r.HandleFunc(path, RequireOptionalAuth(authService, f)).Methods("POST")
 }
