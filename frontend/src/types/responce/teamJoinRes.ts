@@ -1,3 +1,3 @@
-import type Team from "../team";
+import type Team from '../team';
 
-export default interface TeamJoinRes extends Team { }
+export default interface TeamJoinRes extends Team {}

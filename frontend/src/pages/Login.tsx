@@ -54,7 +54,7 @@ export default function Login(props: LoginProps) {
 
     try {
       const body: SigninReq = { email, password };
-      const res = await apiClient.post<SigninRes>("/auth/signin", body);
+      const res = await apiClient.post<SigninRes>('/auth/signin', body);
       // access_token is set as HttpOnly cookie by the server. Store refresh_token and user id only.
       props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
       props.setUserId(res.data.user.id);

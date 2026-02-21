@@ -54,7 +54,7 @@ export default function Dashboard(props: DashboardProps) {
 
     try {
       // API 0.1.0 仕様: GET /fatigue?u={userId}&f={start}&t={to}
-      const res = await apiClient.get<FatigueListRes>("/fatigue", {
+      const res = await apiClient.get<FatigueListRes>('/fatigue', {
         params: { u: props.userId, f: start, t: to },
       });
 

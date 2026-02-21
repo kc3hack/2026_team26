@@ -64,7 +64,7 @@ apiClient.interceptors.response.use(
     }
 
     throw err;
-  }
+  },
 );
 
 export default apiClient;

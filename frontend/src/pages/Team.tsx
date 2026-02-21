@@ -32,7 +32,7 @@ interface TeamProps {
   readonly userId: string;
 }
 
-type StatusCode = 'default' | 'error' | 'warning' | 'success'
+type StatusCode = 'default' | 'error' | 'warning' | 'success';
 
 export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function TeamPage(props: TeamProps) {
   const [createName, setCreateName] = useState('');
   const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
   useEffect(() => {
-      setJoinCode(inviteCode);
+    setJoinCode(inviteCode);
   }, [inviteCode]);
 
   // ▼ 自分の所属チーム情報を取得
@@ -55,7 +55,7 @@ export default function TeamPage(props: TeamProps) {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await apiClient.get<Team>("/teams/my");
+      const res = await apiClient.get<Team>('/teams/my');
       setTeam(res.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -77,9 +77,9 @@ export default function TeamPage(props: TeamProps) {
     if (!createName) return;
     try {
       const body: CreateTeamRequest = { name: createName };
-      const res = await apiClient.post<Team>("/teams", body);
+      const res = await apiClient.post<Team>('/teams', body);
       if (res.status !== 200) {
-        throw new Error(res.statusText)
+        throw new Error(res.statusText);
       }
       alert('チームを作成しました！');
       fetchTeamData();
@@ -93,7 +93,7 @@ export default function TeamPage(props: TeamProps) {
     if (!joinCode) return;
     try {
       const body: JoinTeamRequest = { invite_code: joinCode };
-      await apiClient.post<Team>("/teams/join", body);
+      await apiClient.post<Team>('/teams/join', body);
       alert('チームに参加しました！');
       fetchTeamData();
     } catch (error) {
@@ -347,9 +347,7 @@ export default function TeamPage(props: TeamProps) {
                       {/* ステータスチップ */}
                       <Chip
                         label={getStatusLabel(member.latest_face_score)}
-                        color={
-                          getStatusColor(member.latest_face_score) as StatusCode
-                        }
+                        color={getStatusColor(member.latest_face_score) as StatusCode}
                         variant={member.latest_face_score === undefined ? 'outlined' : 'filled'}
                       />
                     </CardContent>
