@@ -12,8 +12,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import type FatigueListRes from '../types/responce/fatigueListRes';
-import type MeRes from '../types/responce/meRes';
+import type FatigueListRes from '../types/response/fatigueListRes';
+import type MeRes from '../types/response/meRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 

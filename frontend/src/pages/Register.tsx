@@ -18,8 +18,8 @@ import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type SignupReq from '../types/request/signupReq';
-import type ApiErrorResponse from '../types/responce/errorRes';
-import type SignupRes from '../types/responce/signupRes';
+import type ApiErrorResponse from '../types/response/errorRes';
+import type SignupRes from '../types/response/signupRes';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
@@ -95,6 +95,11 @@ export default function Register(props: RegisterProps) {
       <Box
         sx={{
           minHeight: '100vh',
+          width: '100vw',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          overflowX: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

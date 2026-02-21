@@ -29,10 +29,10 @@ import type TeamCreateReq from '../types/request/teamCreateReq';
 import type TeamInviteReq from '../types/request/teamInviteReq'; // 追加
 import type TeamJoinReq from '../types/request/teamJoinReq';
 import type TeamLeaveReq from '../types/request/teamLeaveReq'; // 追加
-import type ApiErrorResponse from '../types/responce/errorRes';
-import type MeRes from '../types/responce/meRes'; // 追加
-import type TeamFatigueRes from '../types/responce/teamFatigueRes';
-import type TeamInviteRes from '../types/responce/teamInviteRes'; // 追加
+import type ApiErrorResponse from '../types/response/errorRes';
+import type MeRes from '../types/response/meRes'; // 追加
+import type TeamFatigueRes from '../types/response/teamFatigueRes';
+import type TeamInviteRes from '../types/response/teamInviteRes'; // 追加
 import type User from '../types/user';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
