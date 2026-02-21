@@ -1,12 +1,9 @@
 import {
   AddCircle as AddCircleIcon,
-  ArrowBack as ArrowBackIcon,
-  GroupAdd as GroupAddIcon,
-  Refresh as RefreshIcon,
+  GroupAdd as GroupAddIcon
 } from '@mui/icons-material';
 import {
   Alert,
-  AppBar,
   Avatar,
   Box,
   Button,
@@ -15,15 +12,14 @@ import {
   Chip,
   CircularProgress,
   Container,
-  IconButton,
   Paper,
   TextField,
-  Toolbar,
-  Typography,
+  Typography
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import Header from '../components/Header';
 import TeamInvite from '../components/teamInvite';
 import type TeamCreateReq from '../types/request/teamCreateReq';
 import type TeamInviteReq from '../types/request/teamInviteReq';
@@ -56,7 +52,6 @@ interface TeamProps {
 // 🚨 修正3: token はこの「TeamPage」コンポーネントの中でしか使えません！
 // 以下すべての処理を必ずこの中に入れます。
 export default function TeamPage({ token, userId }: TeamProps) {
-  const navigate = useNavigate();
   const { inviteCode } = useParams<{ inviteCode: string }>();
 
   // 状態管理 (新しく作った TeamUI を使うように修正)
@@ -257,22 +252,8 @@ export default function TeamPage({ token, userId }: TeamProps) {
         overflowX: 'hidden',
       }}
     >
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            チーム管理
-          </Typography>
-          {team && (
-            <IconButton onClick={fetchTeamData} color="primary">
-              <RefreshIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-      </AppBar>
-
+      {/* ▼ 追加: ヘッダーコンポーネントをここで呼び出す ▼ */}
+      <Header title="チーム管理" showBackButton={true} />
       {/* 【修正】maxWidthを "xl" に拡張して大画面対応 */}
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && (

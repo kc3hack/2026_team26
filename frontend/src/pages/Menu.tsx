@@ -1,15 +1,12 @@
-import { Logout as LogoutIcon } from '@mui/icons-material';
 import {
-  AppBar,
   Box,
-  Button,
   Container,
   CssBaseline,
-  Toolbar,
-  Typography,
+  Typography
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Header from '../components/Header';
 import MenuCard from '../components/MenuCard';
 import { menuItems } from '../components/menuData';
 
@@ -42,16 +39,8 @@ export default function Menu(props: MenuProps) {
           flexDirection: 'column',
         }}
       >
-        <AppBar position="static" elevation={0} sx={{ bgcolor: '#667eea' }}>
-          <Toolbar>
-            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-              疲労モニタリングアプリ
-            </Typography>
-            <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
-              ログアウト
-            </Button>
-          </Toolbar>
-        </AppBar>
+        {/* ▼ 追加: ヘッダーコンポーネントをここで呼び出す ▼ */}
+        <Header showLogoutButton={true} onLogout={props.logout} />
 
         {/* 【修正】元のコードではこのBoxがすぐ閉じられていましたが、
           Containerを中に入れることで「画面の中央配置」が正しく効くようになります！

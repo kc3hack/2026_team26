@@ -1,22 +1,18 @@
 import {
-  ArrowBack as ArrowBackIcon,
   Stop as StopIcon,
-  Videocam as VideocamIcon,
+  Videocam as VideocamIcon
 } from '@mui/icons-material';
 import {
-  AppBar,
   Box,
   Button,
   Chip,
   Container,
-  IconButton,
   Paper,
-  Toolbar,
-  Typography,
+  Typography
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 import type FatigueCreateReq from '../types/request/fatigueCreateReq';
 import type FatigueCreateRes from '../types/response/fatigueCreateRes';
 
@@ -30,7 +26,6 @@ interface MeasureProps {
 }
 
 export default function Measure(props: MeasureProps) {
-  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -122,17 +117,7 @@ export default function Measure(props: MeasureProps) {
         flexDirection: 'column',
       }}
     >
-      {/* ヘッダー */}
-      <AppBar position="static" color="transparent" elevation={0}>
-        <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={() => navigate('/')} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            疲労測定モード
-          </Typography>
-        </Toolbar>
-      </AppBar>
+      <Header title="疲労測定" showBackButton={true} />
 
       <Container
         maxWidth="xl"
