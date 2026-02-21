@@ -314,7 +314,7 @@ export default function TeamPage(props: TeamProps) {
                   label="招待コード"
                   variant="outlined"
                   sx={{ mb: 3 }}
-                  value={joinCode || isActionLoading ? '読み込み中...' : ''}
+                  disabled={loading}
                   onChange={(e) => setJoinCode(e.target.value)}
                 />
                 <Button
