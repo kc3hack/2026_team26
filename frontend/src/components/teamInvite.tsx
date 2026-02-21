@@ -1,25 +1,25 @@
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { Box, Chip, Typography } from "@mui/material";
-import { useState } from "react";
-import type TeamInviteReq from "../types/request/teamInviteReq";
-import type TeamInviteRes from "../types/response/teamInviteRes";
+import { Box, Chip, Typography } from '@mui/material';
+import { useState } from 'react';
+import type TeamInviteReq from '../types/request/teamInviteReq';
+import type TeamInviteRes from '../types/response/teamInviteRes';
 
 type Props = {
-  team_id: string
-  apiInvite: (_req: TeamInviteReq) => Promise<TeamInviteRes>
-}
+  team_id: string;
+  apiInvite: (_req: TeamInviteReq) => Promise<TeamInviteRes>;
+};
 
 const TeamInvite = (props: Props) => {
-  const [teamInvite, setTeamInvite] = useState<TeamInviteRes | undefined>(undefined)
+  const [teamInvite, setTeamInvite] = useState<TeamInviteRes | undefined>(undefined);
 
   const invite = async () => {
     const req: TeamInviteReq = {
-      team_id: props.team_id
-    }
+      team_id: props.team_id,
+    };
     const res = await props.apiInvite(req);
     setTeamInvite(res);
-  }
+  };
 
   // ▼ 招待コードのコピー
   const copyCode = () => {
@@ -27,7 +27,7 @@ const TeamInvite = (props: Props) => {
       navigator.clipboard.writeText(teamInvite.invite_code);
       alert('招待コードをコピーしました');
     }
-  }
+  };
   if (teamInvite) {
     return (
       <Box>
@@ -49,10 +49,13 @@ const TeamInvite = (props: Props) => {
         招待コード発行する
       </Typography>
       <AddIcon
-        onClick={() => { console.log("CLICK"); invite() }}
+        onClick={() => {
+          console.log('CLICK');
+          invite();
+        }}
       />
     </Box>
-  )
-}
+  );
+};
 
 export default TeamInvite;

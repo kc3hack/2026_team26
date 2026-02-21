@@ -63,7 +63,6 @@ export default function Menu(props: MenuProps) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-
       <Box
         sx={{
           minHeight: '100vh',
@@ -74,27 +73,30 @@ export default function Menu(props: MenuProps) {
           bgcolor: '#f5f7fa',
           overflowX: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <AppBar position="static" elevation={0} sx={{ bgcolor: '#667eea' }}>
-           <Toolbar>
-           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            疲労モニタリングアプリ
-           </Typography>
-           <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
-            ログアウト
-           </Button>
+          flexDirection: 'column',
+        }}
+      >
+        <AppBar position="static" elevation={0} sx={{ bgcolor: '#667eea' }}>
+          <Toolbar>
+            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+              疲労モニタリングアプリ
+            </Typography>
+            <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
+              ログアウト
+            </Button>
           </Toolbar>
         </AppBar>
 
-        <Box sx={{
-        flexGrow: 1, // ヘッダー以外の「残りの高さ」をすべて使う
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',      // ここで初めて中央揃えにする！
-        justifyContent: 'center',
-        pb: 10 // 少し上に配置したほうが見栄えがいいので下の余白を広めにとる
-      }}></Box>
+        <Box
+          sx={{
+            flexGrow: 1, // ヘッダー以外の「残りの高さ」をすべて使う
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center', // ここで初めて中央揃えにする！
+            justifyContent: 'center',
+            pb: 10, // 少し上に配置したほうが見栄えがいいので下の余白を広めにとる
+          }}
+        ></Box>
 
         {/* 【修正】maxWidth="xl" にして大画面対応 */}
         <Container maxWidth="xl">
