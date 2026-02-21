@@ -33,9 +33,7 @@ export default function MenuCard({ title, description, icon, color, path }: Menu
               textAlign: 'center',
             }}
           >
-            <Avatar sx={{ bgcolor: color, width: 80, height: 80, mb: 3 }}>
-              {icon}
-            </Avatar>
+            <Avatar sx={{ bgcolor: color, width: 80, height: 80, mb: 3 }}>{icon}</Avatar>
             <CardContent>
               <Typography variant="h5" component="div" gutterBottom sx={{ fontWeight: 'bold' }}>
                 {title}

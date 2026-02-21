@@ -1,27 +1,14 @@
-import {
-  Stop as StopIcon,
-  Videocam as VideocamIcon
-} from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Chip,
-  Container,
-  Paper,
-  Typography
-} from '@mui/material';
-import axios from 'axios';
+import { Stop as StopIcon, Videocam as VideocamIcon } from '@mui/icons-material';
+import { Box, Button, Chip, Container, Paper, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from '../components/Header';
+import API from '../lib/axios';
 import type FatigueCreateReq from '../types/request/fatigueCreateReq';
 import type FatigueCreateRes from '../types/response/fatigueCreateRes';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 // 【修正】DUMMY_GAME_ID の定義を削除しました
 
 interface MeasureProps {
-  readonly token: string | null;
   readonly userId: string | null;
 }
 
@@ -56,7 +43,7 @@ export default function Measure(props: MeasureProps) {
 
   // ▼ 測定とデータ送信を行う関数
   const measureAndSend = useCallback(async () => {
-    if (!props.token || !props.userId) return;
+    if (!props.userId) return;
 
     const dummyFaceScore = Math.floor(Math.random() * 100);
     const dummyVoiceScore = Math.floor(Math.random() * 100);
@@ -73,9 +60,7 @@ export default function Measure(props: MeasureProps) {
         recorded_at: new Date().toISOString(),
       };
 
-      await axios.post<FatigueCreateRes>(`${API_URL}/fatigue`, req, {
-        headers: { Authorization: `Bearer ${props.token}` },
-      });
+      await API.authClient().post<FatigueCreateRes>('/fatigue', req);
 
       const time = new Date().toLocaleTimeString();
       setLogs((prev) => [
@@ -86,7 +71,7 @@ export default function Measure(props: MeasureProps) {
       console.error('送信エラー:', error);
       setLogs((prev) => ['送信失敗...', ...prev.slice(0, 4)]);
     }
-  }, [props.token, props.userId]);
+  }, [props.userId]);
 
   // ▼ 録画状態の管理
   useEffect(() => {

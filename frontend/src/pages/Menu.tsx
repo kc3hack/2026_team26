@@ -1,9 +1,4 @@
-import {
-  Box,
-  Container,
-  CssBaseline,
-  Typography
-} from '@mui/material';
+import { Box, Container, CssBaseline, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Header from '../components/Header';

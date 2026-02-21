@@ -17,11 +17,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API from '../lib/axios';
 import type SignupReq from '../types/request/signupReq';
 import type ApiErrorResponse from '../types/response/errorRes';
 import type SignupRes from '../types/response/signupRes';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 const theme = createTheme({
   palette: {
@@ -38,8 +37,6 @@ const theme = createTheme({
 
 interface RegisterProps {
   readonly setUserId: (_userId: string) => void;
-  readonly setAccessToken: (_token: string) => void;
-  readonly setRefreshToken: (_refreshToken: string) => void;
 }
 
 export default function Register(props: RegisterProps) {
@@ -67,10 +64,10 @@ export default function Register(props: RegisterProps) {
       display_name: username,
     };
     try {
-      const res = await axios.post<SignupRes>(`${API_URL}/auth/signup`, req);
+      const res = await API.client().post<SignupRes>('/auth/signup', req);
       const data = res.data;
-      props.setAccessToken(data.access_token);
-      props.setRefreshToken(data.refresh_token || '');
+      API.setToken(data.access_token);
+      API.setRefreshToken(data.refresh_token || '');
       props.setUserId(data.user.id);
       alert('登録完了！メインメニューへ移動します。');
       navigate('/login');

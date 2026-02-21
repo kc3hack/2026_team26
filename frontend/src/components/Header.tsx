@@ -4,17 +4,17 @@ import { useNavigate } from 'react-router-dom';
 
 // ▼ 外から受け取る「設定スイッチ（Props）」を定義
 interface HeaderProps {
-  title?: string;             // ヘッダーのタイトル（省略時はデフォルト値が入る）
-  showBackButton?: boolean;   // 「戻る」ボタンを表示するか？ (true/false)
+  title?: string; // ヘッダーのタイトル（省略時はデフォルト値が入る）
+  showBackButton?: boolean; // 「戻る」ボタンを表示するか？ (true/false)
   showLogoutButton?: boolean; // 「ログアウト」ボタンを表示するか？ (true/false)
-  onLogout?: () => void;      // ログアウト時の処理
-  backPath?: string;          // 戻るボタンを押した時の移動先（デフォルトは '/'）
+  onLogout?: () => void; // ログアウト時の処理
+  backPath?: string; // 戻るボタンを押した時の移動先（デフォルトは '/'）
 }
 
 export default function Header({
   title = '疲労モニタリングアプリ', // デフォルトのタイトル
-  showBackButton = false,       // デフォルトは非表示
-  showLogoutButton = false,     // デフォルトは非表示
+  showBackButton = false, // デフォルトは非表示
+  showLogoutButton = false, // デフォルトは非表示
   onLogout,
   backPath = '/',
 }: HeaderProps) {
@@ -23,7 +23,6 @@ export default function Header({
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: '#667eea' }}>
       <Toolbar>
-
         {/* ▼ showBackButton が true の時だけ「戻る」ボタンを表示 */}
         {showBackButton && (
           <IconButton
@@ -47,7 +46,6 @@ export default function Header({
             ログアウト
           </Button>
         )}
-
       </Toolbar>
     </AppBar>
   );
