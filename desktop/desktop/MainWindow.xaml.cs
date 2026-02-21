@@ -21,6 +21,10 @@ namespace desktop
     {
         private CameraDevice _camera;
         private AudioDevice _audio;
+        private IDeviceService _deviceService;
+        private VideoStreamClient _videoClient;
+        private AudioStreamClient _audioClient;
+        private bool _connected = false;
 
         public MainWindow()
         {
@@ -28,7 +32,41 @@ namespace desktop
             _camera = new CameraDevice(0);
             _audio = new AudioDevice();
 
+            // resolve Python device service from DI
+            _deviceService = App.CurrentApp.ServiceProvider.GetService(typeof(IDeviceService)) as IDeviceService;
+
             CompositionTarget.Rendering += UpdateFrame;
+
+            // populate devices (fire-and-forget)
+            _ = LoadDevicesAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadDevicesAsync()
+        {
+            try
+            {
+                if (_deviceService == null) return;
+                var list = await _deviceService.GetDevicesAsync();
+                Dispatcher.Invoke(() =>
+                {
+                    deviceCombo.Items.Clear();
+                    audioCombo.Items.Clear();
+                    foreach (var d in list)
+                    {
+                        if (d.Id != null && d.Id.StartsWith("audio"))
+                        {
+                            audioCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = d.Name, Tag = d.Id });
+                        }
+                        else
+                        {
+                            deviceCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = d.Name, Tag = d.Id });
+                        }
+                    }
+                    if (deviceCombo.Items.Count > 0) deviceCombo.SelectedIndex = 0;
+                    if (audioCombo.Items.Count > 0) audioCombo.SelectedIndex = 0;
+                });
+            }
+            catch { }
         }
 
         private void UpdateFrame(object sender, EventArgs e)
@@ -36,12 +74,98 @@ namespace desktop
             var source = _camera.GetFrameSource();
             if (source != null)
             {
-                // XAMLに書いた <Image x:Name="imageDisplay" /> に表示
-                // カメラ更新（既存コード）
-                imageDisplay.Source = _camera.GetFrameSource();
-
-                // マイクの音量をバーに反映
+                imageDisplay.Source = source;
                 volumeBar.Value = _audio.CurrentVolume;
+            }
+        }
+
+        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_connected)
+            {
+                var item = deviceCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                if (item == null) return;
+                var deviceId = item.Tag as string;
+                try
+                {
+                    if (_deviceService != null)
+                        await _deviceService.StartCaptureAsync(deviceId, "video");
+
+                    _videoClient = new VideoStreamClient();
+                    _videoClient.OnFrame += (s, ev) =>
+                    {
+                        Dispatcher.Invoke(() => imageDisplay.Source = ev.Image);
+                    };
+                    await _videoClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/video"));
+                    connectButton.Content = "Disconnect";
+                    _connected = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to connect: " + ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var item = deviceCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                    var deviceId = item?.Tag as string;
+                    if (_deviceService != null && deviceId != null)
+                        await _deviceService.StopCaptureAsync(deviceId);
+                    if (_videoClient != null) await _videoClient.DisconnectAsync();
+                    if (_audioClient != null) await _audioClient.DisconnectAsync();
+                }
+                catch { }
+                connectButton.Content = "Connect";
+                _connected = false;
+            }
+        }
+
+        private bool _audioConnected = false;
+        private async void AudioConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_audioConnected)
+            {
+                var item = audioCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                if (item == null) return;
+                var deviceId = item.Tag as string;
+                try
+                {
+                    if (_deviceService != null)
+                        await _deviceService.StartCaptureAsync(deviceId, "audio");
+
+                    _audioClient = new AudioStreamClient();
+                    _audioClient.OnAudioData += (s, ev) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            audioScoreText.Text = $"Voice: {ev.Score:F1}";
+                            volumeBar.Value = Math.Min(1.0, ev.Score / 100.0);
+                        });
+                    };
+                    await _audioClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/audio"));
+                    audioConnectButton.Content = "Disconnect Audio";
+                    _audioConnected = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to connect audio: " + ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    var item = audioCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                    var deviceId = item?.Tag as string;
+                    if (_deviceService != null && deviceId != null)
+                        await _deviceService.StopCaptureAsync(deviceId);
+                    if (_audioClient != null) await _audioClient.DisconnectAsync();
+                }
+                catch { }
+                audioConnectButton.Content = "Connect Audio";
+                _audioConnected = false;
             }
         }
 

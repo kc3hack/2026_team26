@@ -32,6 +32,12 @@ namespace desktop
                 c.BaseAddress = new Uri("http://localhost:8080");
             });
 
+            // Python service for device capture (local FastAPI)
+            services.AddHttpClient<IDeviceService, PythonDeviceService>(c =>
+            {
+                c.BaseAddress = new Uri("http://127.0.0.1:8000");
+            });
+
             // 2. Service層
             services.AddTransient<ITeamService, TeamService>();
             services.AddTransient<IFatigueService, FatigueService>();
