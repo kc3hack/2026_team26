@@ -52,18 +52,20 @@ namespace desktop
                 var auds = EnumerateLocalAudioDevices();
                 Dispatcher.Invoke(() =>
                 {
-                    deviceCombo.Items.Clear();
-                    audioCombo.Items.Clear();
+                    var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                    var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                    if (devCombo != null) devCombo.Items.Clear();
+                    if (audCombo != null) audCombo.Items.Clear();
                     foreach (var c in cams)
                     {
-                        deviceCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = c.Name, Tag = c.Id });
+                        devCombo?.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = c.Name, Tag = c.Id });
                     }
                     foreach (var a in auds)
                     {
-                        audioCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = a.Name, Tag = a.Id });
+                        audCombo?.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = a.Name, Tag = a.Id });
                     }
-                    if (deviceCombo.Items.Count > 0) deviceCombo.SelectedIndex = 0;
-                    if (audioCombo.Items.Count > 0) audioCombo.SelectedIndex = 0;
+                    if (devCombo != null && devCombo.Items.Count > 0) devCombo.SelectedIndex = 0;
+                    if (audCombo != null && audCombo.Items.Count > 0) audCombo.SelectedIndex = 0;
                 });
             }
             catch { }
@@ -133,7 +135,8 @@ namespace desktop
         {
             if (!_connected)
             {
-                var item = deviceCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                var item = devCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                 if (item == null) return;
                 var deviceId = item.Tag as string;
                 try
@@ -163,7 +166,8 @@ namespace desktop
             {
                 try
                 {
-                    var item = deviceCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                    var devCombo = this.FindName("deviceCombo") as System.Windows.Controls.ComboBox;
+                    var item = devCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                     var deviceId = item?.Tag as string;
                     if (_deviceService != null && deviceId != null)
                         await _deviceService.StopCaptureAsync(deviceId);
@@ -181,7 +185,8 @@ namespace desktop
         {
             if (!_audioConnected)
             {
-                var item = audioCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                var item = audCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                 if (item == null) return;
                 var deviceId = item.Tag as string;
                 try
@@ -211,7 +216,8 @@ namespace desktop
             {
                 try
                 {
-                    var item = audioCombo.SelectedItem as System.Windows.Controls.ComboBoxItem;
+                    var audCombo = this.FindName("audioCombo") as System.Windows.Controls.ComboBox;
+                    var item = audCombo?.SelectedItem as System.Windows.Controls.ComboBoxItem;
                     var deviceId = item?.Tag as string;
                     if (_deviceService != null && deviceId != null)
                         await _deviceService.StopCaptureAsync(deviceId);
