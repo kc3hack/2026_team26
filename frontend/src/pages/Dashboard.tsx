@@ -25,12 +25,19 @@ export default function Dashboard() {
 
     try {
       // ユーザー情報の取得
-      const meRes = await API.authClient().get<MeRes>('/me');
+      let meRes = await API.authClient().get<MeRes>('/me');
+      if (meRes.status === 401) {
+        await API.tokenRefresh();
+        meRes = await API.authClient().get<MeRes>('/me');
+      }
       const myUserId = meRes.data.user_data.id;
 
       // 疲労度リストの取得
-      const fatigueRes = await API.authClient().get<FatigueListRes>(`/fatigue?u=${myUserId}&n=10`);
-
+      let fatigueRes = await API.authClient().get<FatigueListRes>(`/fatigue?u=${myUserId}&n=10`);
+      if (fatigueRes.status === 401) {
+        await API.tokenRefresh();
+        fatigueRes = await API.authClient().get<FatigueListRes>(`/fatigue?u=${myUserId}&n=10`);
+      }
       // データの整形
       const formattedData = (fatigueRes.data.items || []).map((log) => {
         const date = new Date(log.recorded_at);

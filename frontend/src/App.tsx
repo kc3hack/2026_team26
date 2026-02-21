@@ -19,7 +19,7 @@ function App() {
 
   const logout = async () => {
     try {
-      await API.logout()
+      await API.logout();
     } catch (error) {
       console.error('ログアウトAPIの呼び出しに失敗しましたが、ローカルデータは削除します', error);
     } finally {
@@ -45,33 +45,17 @@ function App() {
 
         <Route
           path="/team"
-          element={
-            userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />
-          }
+          element={userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />}
         />
         {/* ▼▼ 追加: 招待URL用の動的ルーティング ▼▼ */}
         <Route
           path="/invite/:inviteCode"
-          element={
-            userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />
-          }
+          element={userId ? <TeamPage userId={userId} /> : <Navigate to="/login" />}
         />
 
         {/* Loginコンポーネントに setRefreshToken も渡す */}
-        <Route
-          path="/login"
-          element={
-            <Login setUserId={setUserId} />
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <Register
-              setUserId={setUserId}
-            />
-          }
-        />
+        <Route path="/login" element={<Login setUserId={setUserId} />} />
+        <Route path="/register" element={<Register setUserId={setUserId} />} />
       </Routes>
     </BrowserRouter>
   );

@@ -60,7 +60,11 @@ export default function Measure(props: MeasureProps) {
         recorded_at: new Date().toISOString(),
       };
 
-      await API.authClient().post<FatigueCreateRes>('/fatigue', req);
+      const res = await API.authClient().post<FatigueCreateRes>('/fatigue', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post<FatigueCreateRes>('/fatigue', req);
+      }
 
       const time = new Date().toLocaleTimeString();
       setLogs((prev) => [

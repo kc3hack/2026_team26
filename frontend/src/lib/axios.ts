@@ -55,11 +55,11 @@ class API {
 
   async logout() {
     const body: LogoutReq = {
-      refresh_token: this.refresh
-    }
+      refresh_token: this.refresh,
+    };
     await this.apiClient.post('/auth/logout', body);
-    this.refresh = ''
-    this.token = ''
+    this.refresh = '';
+    this.token = '';
   }
 
   client() {

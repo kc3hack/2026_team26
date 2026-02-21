@@ -70,7 +70,11 @@ export default function TeamPage(props: TeamProps) {
 
     try {
       // 1. まずは自分の情報を取得し、所属チームがあるか確認する
-      const meRes = await API.authClient().get<MeRes>('/me');
+      let meRes = await API.authClient().get<MeRes>('/me');
+      if (meRes.status === 401) {
+        await API.tokenRefresh();
+        meRes = await API.authClient().get<MeRes>('/me');
+      }
 
       const myTeams = meRes.data.user_teams;
 
@@ -85,9 +89,15 @@ export default function TeamPage(props: TeamProps) {
       const myTeamId = myTeams[0].id;
 
       // 2. チームの疲労度データと、招待コードを「同時に」取得する
-      const fatiguePromise = API.authClient().get<TeamFatigueRes>(
+      let fatiguePromise = await API.authClient().get<TeamFatigueRes>(
         `/team/fatigue?team_id=${myTeamId}`,
       );
+      if (fatiguePromise.status === 401) {
+        await API.tokenRefresh();
+        fatiguePromise = await API.authClient().get<TeamFatigueRes>(
+          `/team/fatigue?team_id=${myTeamId}`,
+        );
+      }
 
       // API通信を並列で待つ（高速化のため）
       const [fatigueRes] = await Promise.all([fatiguePromise]);
@@ -123,7 +133,11 @@ export default function TeamPage(props: TeamProps) {
   }, [fetchTeamData]);
   // 招待API通信部分
   const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
-    const res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
+    let res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
+    if (res.status === 401) {
+      await API.tokenRefresh();
+      res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
+    }
     if (res.status !== 200) {
       throw new Error("couldn't get invite code");
     }
@@ -138,7 +152,11 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamCreateReq = { name: createName };
-      await API.authClient().post('/team/create', req);
+      const res = await API.authClient().post('/team/create', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/create', req);
+      }
       fetchTeamData();
     } catch (error) {
       console.error(error);
@@ -155,7 +173,11 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamJoinReq = { team_tag: joinCode };
-      await API.authClient().post('/team/join', req);
+      const res = await API.authClient().post('/team/join', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/join', req);
+      }
       fetchTeamData();
     } catch (error) {
       console.error(error);
@@ -175,7 +197,11 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamLeaveReq = { team_id: team.id };
-      await API.authClient().post('/team/leave', req);
+      const res = await API.authClient().post('/team/leave', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/leave', req);
+      }
       // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
       fetchTeamData();
     } catch (error) {
