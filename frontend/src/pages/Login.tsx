@@ -56,7 +56,9 @@ export default function Login(props: LoginProps) {
 
     try {
       const body: SigninReq = { email, password };
-      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, body);
+      const res = await axios.post<SigninRes>(`${API_URL}/auth/signin`, body,{
+        withCredentials: true
+      });
       props.setToken(res.data.access_token);
       props.setRefreshToken(res.data.refresh_token || ''); // refresh_tokenを保存
       props.setUserId(res.data.user.id);
