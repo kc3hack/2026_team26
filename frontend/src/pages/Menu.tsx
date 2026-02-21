@@ -63,25 +63,39 @@ export default function Menu(props: MenuProps) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            疲労モニタリングアプリ
-          </Typography>
-          <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
-            ログアウト
-          </Button>
-        </Toolbar>
-      </AppBar>
 
       <Box
         sx={{
-          minHeight: 'calc(100vh - 64px)',
+          minHeight: '100vh',
+          width: '100vw',
+          position: 'absolute',
+          top: 0,
+          left: 0,
           bgcolor: '#f5f7fa',
-          pt: 8,
-          pb: 8,
-        }}
-      >
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <AppBar position="static" elevation={0} sx={{ bgcolor: '#667eea' }}>
+           <Toolbar>
+           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            疲労モニタリングアプリ
+           </Typography>
+           <Button color="inherit" onClick={props.logout} startIcon={<LogoutIcon />}>
+            ログアウト
+           </Button>
+          </Toolbar>
+        </AppBar>
+
+        <Box sx={{
+        flexGrow: 1, // ヘッダー以外の「残りの高さ」をすべて使う
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',      // ここで初めて中央揃えにする！
+        justifyContent: 'center',
+        pb: 10 // 少し上に配置したほうが見栄えがいいので下の余白を広めにとる
+      }}></Box>
+
         {/* 【修正】maxWidth="xl" にして大画面対応 */}
         <Container maxWidth="xl">
           <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 6 }}>
