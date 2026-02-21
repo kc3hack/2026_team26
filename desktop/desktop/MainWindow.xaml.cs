@@ -1,4 +1,6 @@
 ﻿using System;
+using OpenCvSharp;
+using NAudio.Wave;
 using System.Text;
 using System.Net.Http;
 using System.Windows;
@@ -45,28 +47,76 @@ namespace desktop
         {
             try
             {
-                if (_deviceService == null) return;
-                var list = await _deviceService.GetDevicesAsync();
+                // Enumerate local devices in C# and populate UI. User selection will be sent to Python on connect.
+                var cams = EnumerateLocalCameras(6);
+                var auds = EnumerateLocalAudioDevices();
                 Dispatcher.Invoke(() =>
                 {
                     deviceCombo.Items.Clear();
                     audioCombo.Items.Clear();
-                    foreach (var d in list)
+                    foreach (var c in cams)
                     {
-                        if (d.Id != null && d.Id.StartsWith("audio"))
-                        {
-                            audioCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = d.Name, Tag = d.Id });
-                        }
-                        else
-                        {
-                            deviceCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = d.Name, Tag = d.Id });
-                        }
+                        deviceCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = c.Name, Tag = c.Id });
+                    }
+                    foreach (var a in auds)
+                    {
+                        audioCombo.Items.Add(new System.Windows.Controls.ComboBoxItem { Content = a.Name, Tag = a.Id });
                     }
                     if (deviceCombo.Items.Count > 0) deviceCombo.SelectedIndex = 0;
                     if (audioCombo.Items.Count > 0) audioCombo.SelectedIndex = 0;
                 });
             }
             catch { }
+        }
+
+        private System.Collections.Generic.List<(string Id, string Name)> EnumerateLocalCameras(int maxIndex)
+        {
+            var list = new System.Collections.Generic.List<(string, string)>();
+            for (int i = 0; i < maxIndex; i++)
+            {
+                try
+                {
+                    using var cap = new VideoCapture(i);
+                    if (!cap.IsOpened())
+                    {
+                        cap.Release();
+                        continue;
+                    }
+                    using var mat = new Mat();
+                    if (cap.Read(mat) && !mat.Empty())
+                    {
+                        list.Add((i.ToString(), $"Camera {i}"));
+                    }
+                    cap.Release();
+                }
+                catch { }
+            }
+            return list;
+        }
+
+        private System.Collections.Generic.List<(string Id, string Name)> EnumerateLocalAudioDevices()
+        {
+            var list = new System.Collections.Generic.List<(string, string)>();
+            try
+            {
+                int count = WaveIn.DeviceCount;
+                for (int i = 0; i < count; i++)
+                {
+                    try
+                    {
+                        var caps = WaveIn.GetCapabilities(i);
+                        var name = string.IsNullOrEmpty(caps.ProductName) ? $"Microphone {i}" : caps.ProductName;
+                        list.Add(($"audio_{i}", $"Microphone {i}: {name}"));
+                    }
+                    catch { }
+                }
+            }
+            catch
+            {
+                // fallback: add default
+                list.Add(("audio_0", "Microphone 0"));
+            }
+            return list;
         }
 
         private void UpdateFrame(object sender, EventArgs e)
