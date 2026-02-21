@@ -86,12 +86,16 @@ export default function Dashboard({ token }: DashboardProps) {
     // ▼ 修正: position="absolute" と width="100vw" で元の制限を突破して画面いっぱいに広げる
     <Box sx={{
       minHeight: '100vh',
-      bgcolor: '#f5f7fa',
-      width: '100vw',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      overflowX: 'hidden' // 横スクロールバーを出さないための処理
+        width: '100vw',         // ← 追加: 横幅をブラウザ100%に
+        position: 'absolute',   // ← 追加: 元の制限枠から飛び出す
+        top: 0,                 // ← 追加: 上端に合わせる
+        left: 0,                // ← 追加: 左端に合わせる
+        overflowX: 'hidden',    // ← 追加: 横スクロールバーを消す
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f7fa', // 背景色は今のものに合わせてください
     }}>
 
       {/* ▼ 追加: メニューに戻るためのヘッダー（AppBar） ▼ */}
