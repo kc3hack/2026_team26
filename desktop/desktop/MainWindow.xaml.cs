@@ -94,7 +94,7 @@ namespace desktop
 
         private System.Collections.Generic.List<(string Id, string Name)> EnumerateLocalCameras(int maxIndex)
         {
-            var list = new System.Collections.Generic.List<(string, string)>();
+            var list = new System.Collections.Generic.List<(string Id, string Name)>();
             for (int i = 0; i < maxIndex; i++)
             {
                 try
@@ -119,7 +119,7 @@ namespace desktop
 
         private System.Collections.Generic.List<(string Id, string Name)> EnumerateLocalAudioDevices()
         {
-            var list = new System.Collections.Generic.List<(string, string)>();
+            var list = new System.Collections.Generic.List<(string Id, string Name)>();
             try
             {
                 int count = WaveIn.DeviceCount;
