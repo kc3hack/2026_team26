@@ -177,8 +177,16 @@ namespace desktop
                     {
                         Dispatcher.Invoke(() =>
                         {
-                                    if (imageDisplayRef != null) imageDisplayRef.Source = ev.Image;
-                                    try { if (faceScoreTextRef != null) faceScoreTextRef.Text = $"Face fatigue: {ev.FaceScore:F1}"; } catch { }
+                            // 1. 映像を更新
+                            if (imageDisplayRef != null) imageDisplayRef.Source = ev.Image;
+
+                            // 2. 顔の疲労度スコアを表示
+                            if (faceScoreTextRef != null)
+                                faceScoreTextRef.Text = $"Face Fatigue: {ev.FaceScore:F1}";
+
+                            // 3. 音声の疲労度スコアを表示
+                            //if (audioScoreTextRef != null)
+                            //    audioScoreTextRef.Text = $"Voice Fatigue: {ev.VoiceScore:F1}";
                         });
                     };
                     await _videoClient.ConnectAsync(new Uri("ws://127.0.0.1:8000/ws/video"));
