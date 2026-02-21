@@ -1,7 +1,4 @@
-import {
-  AddCircle as AddCircleIcon,
-  GroupAdd as GroupAddIcon
-} from '@mui/icons-material';
+import { AddCircle as AddCircleIcon, GroupAdd as GroupAddIcon } from '@mui/icons-material';
 import {
   Alert,
   Avatar,
@@ -14,13 +11,14 @@ import {
   Container,
   Paper,
   TextField,
-  Typography
+  Typography,
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import TeamInvite from '../components/teamInvite';
+import API from '../lib/axios';
 import type TeamCreateReq from '../types/request/teamCreateReq';
 import type TeamInviteReq from '../types/request/teamInviteReq';
 import type TeamJoinReq from '../types/request/teamJoinReq';
@@ -30,8 +28,6 @@ import type MeRes from '../types/response/meRes'; // 追加
 import type TeamFatigueRes from '../types/response/teamFatigueRes';
 import type TeamInviteRes from '../types/response/teamInviteRes';
 import type User from '../types/user';
-
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
 interface TeamUI {
   id: string;
@@ -45,13 +41,12 @@ interface TeamUI {
 }
 
 interface TeamProps {
-  token: string;
   userId: string;
 }
 
 // 🚨 修正3: token はこの「TeamPage」コンポーネントの中でしか使えません！
 // 以下すべての処理を必ずこの中に入れます。
-export default function TeamPage({ token, userId }: TeamProps) {
+export default function TeamPage(props: TeamProps) {
   const { inviteCode } = useParams<{ inviteCode: string }>();
 
   // 状態管理 (新しく作った TeamUI を使うように修正)
@@ -75,9 +70,11 @@ export default function TeamPage({ token, userId }: TeamProps) {
 
     try {
       // 1. まずは自分の情報を取得し、所属チームがあるか確認する
-      const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let meRes = await API.authClient().get<MeRes>('/me');
+      if (meRes.status === 401) {
+        await API.tokenRefresh();
+        meRes = await API.authClient().get<MeRes>('/me');
+      }
 
       const myTeams = meRes.data.user_teams;
 
@@ -92,12 +89,15 @@ export default function TeamPage({ token, userId }: TeamProps) {
       const myTeamId = myTeams[0].id;
 
       // 2. チームの疲労度データと、招待コードを「同時に」取得する
-      const fatiguePromise = axios.get<TeamFatigueRes>(
-        `${API_URL}/team/fatigue?team_id=${myTeamId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+      let fatiguePromise = await API.authClient().get<TeamFatigueRes>(
+        `/team/fatigue?team_id=${myTeamId}`,
       );
+      if (fatiguePromise.status === 401) {
+        await API.tokenRefresh();
+        fatiguePromise = await API.authClient().get<TeamFatigueRes>(
+          `/team/fatigue?team_id=${myTeamId}`,
+        );
+      }
 
       // API通信を並列で待つ（高速化のため）
       const [fatigueRes] = await Promise.all([fatiguePromise]);
@@ -126,16 +126,18 @@ export default function TeamPage({ token, userId }: TeamProps) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     fetchTeamData();
   }, [fetchTeamData]);
   // 招待API通信部分
   const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
-    const res = await axios.post<TeamInviteRes>(`${API_URL}/team/invite`, req, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    let res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
+    if (res.status === 401) {
+      await API.tokenRefresh();
+      res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
+    }
     if (res.status !== 200) {
       throw new Error("couldn't get invite code");
     }
@@ -150,9 +152,11 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamCreateReq = { name: createName };
-      await axios.post(`${API_URL}/team/create`, req, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await API.authClient().post('/team/create', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/create', req);
+      }
       fetchTeamData();
     } catch (error) {
       console.error(error);
@@ -169,9 +173,11 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamJoinReq = { team_tag: joinCode };
-      await axios.post(`${API_URL}/team/join`, req, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await API.authClient().post('/team/join', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/join', req);
+      }
       fetchTeamData();
     } catch (error) {
       console.error(error);
@@ -191,9 +197,11 @@ export default function TeamPage({ token, userId }: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamLeaveReq = { team_id: team.id };
-      await axios.post(`${API_URL}/team/leave`, req, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await API.authClient().post('/team/leave', req);
+      if (res.status === 401) {
+        await API.tokenRefresh();
+        await API.authClient().post('/team/leave', req);
+      }
       // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
       fetchTeamData();
     } catch (error) {
@@ -419,7 +427,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
                           sx={{
-                            bgcolor: member.user_id === userId ? '#667eea' : '#e0e0e0',
+                            bgcolor: member.user_id === props.userId ? '#667eea' : '#e0e0e0',
                             mr: 2,
                           }}
                         >
@@ -427,7 +435,7 @@ export default function TeamPage({ token, userId }: TeamProps) {
                         </Avatar>
                         <Box>
                           <Typography variant="subtitle1" fontWeight="bold">
-                            {member.display_name} {member.user_id === userId && '(あなた)'}
+                            {member.display_name} {member.user_id === props.userId && '(あなた)'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {member.last_updated
