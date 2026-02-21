@@ -23,7 +23,7 @@ import {
 } from 'recharts';
 import apiClient from '../lib/axios';
 import type FatigueLog from '../types/fatigueLog';
-import type FatigueListRes from '../types/responce/fatigueListRes';
+import type FatigueListRes from '../types/response/fatigueListRes';
 
 interface DashboardProps {
   readonly logout: () => void;

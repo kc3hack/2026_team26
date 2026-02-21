@@ -1,9 +1,8 @@
 import {
   AddCircle as AddCircleIcon,
   ArrowBack as ArrowBackIcon,
-  ContentCopy as ContentCopyIcon,
   GroupAdd as GroupAddIcon,
-  Refresh as RefreshIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import {
   Alert,
@@ -25,8 +24,22 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import TeamInvite from '../components/teamInvite';
 import apiClient from '../lib/axios';
-import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
+import type TeamCreateReq from '../types/request/teamCreateReq';
+import type TeamInviteReq from '../types/request/teamInviteReq';
+import type TeamJoinReq from '../types/request/teamJoinReq';
+import type TeamLeaveReq from '../types/request/teamLeaveReq';
+import type ApiErrorResponse from '../types/response/errorRes';
+import type MeRes from '../types/response/meRes';
+import type TeamInviteRes from '../types/response/teamInviteRes';
+import type Team from '../types/team';
+
+interface TeamUI {
+  id: string;
+  name: string;
+  members: { user_id: string; display_name: string; latest_face_score?: number; last_updated?: string }[];
+}
 
 interface TeamProps {
   readonly userId: string;
@@ -38,25 +51,45 @@ export default function TeamPage(props: TeamProps) {
   const navigate = useNavigate();
   const { inviteCode } = useParams<{ inviteCode: string }>();
 
-  // 状態管理
-  const [team, setTeam] = useState<Team | null>(null);
+  // 状態管理 (新しく作った TeamUI を使うように修正)
+  const [team, setTeam] = useState<TeamUI | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   // 入力フォーム用
   const [createName, setCreateName] = useState('');
-  const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
+  const [joinCode, setJoinCode] = useState<string>(inviteCode ?? '');
+
   useEffect(() => {
-    setJoinCode(inviteCode);
+    setJoinCode(inviteCode || '');
   }, [inviteCode]);
 
+  // TODO: 実装しなおし
   // ▼ 自分の所属チーム情報を取得
   const fetchTeamData = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await apiClient.get<Team>('/teams/my');
-      setTeam(res.data);
+      const res = await apiClient.get<MeRes>('/me')
+      if (res.status !== 200) {
+        throw new Error(res.statusText)
+      }
+      const teamRes = res.data.user_teams[0];
+      const teamId = teamRes.id;
+      const teamDataRes = await apiClient.get('/team/fatigue', {
+        params: {
+          team_id: teamId
+        }
+      })
+      const teamData = teamDataRes.data.team_data;
+      const teamMember = teamDataRes.data.team_user;
+      const teamUIData: TeamUI = {
+        id: teamData.id,
+        name: teamData.name,
+        members: teamMember
+      }
+      setTeam(teamUIData);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         setTeam(null); // 所属なし
@@ -71,12 +104,21 @@ export default function TeamPage(props: TeamProps) {
   useEffect(() => {
     fetchTeamData();
   }, [fetchTeamData]);
+  // 招待API通信部分
+  const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
+    const res = await apiClient.post<TeamInviteRes>("/team/invite", req)
+    if (res.status !== 200) {
+      throw new Error("couldn't get invite code")
+    }
+    const data = res.data;
+    return data;
+  }
 
   // ▼ チーム作成
   const handleCreateTeam = async () => {
     if (!createName) return;
     try {
-      const body: CreateTeamRequest = { name: createName };
+      const body: TeamCreateReq = { name: createName };
       await apiClient.post<Team>('/teams', body);
       alert('チームを作成しました！');
       fetchTeamData();
@@ -89,7 +131,7 @@ export default function TeamPage(props: TeamProps) {
   const handleJoinTeam = async () => {
     if (!joinCode) return;
     try {
-      const body: JoinTeamRequest = { invite_code: joinCode };
+      const body: TeamJoinReq = { team_tag: joinCode };
       await apiClient.post<Team>('/teams/join', body);
       alert('チームに参加しました！');
       fetchTeamData();
@@ -98,7 +140,28 @@ export default function TeamPage(props: TeamProps) {
     }
   };
 
-  // エラーハンドリング共通化
+  // ▼ チーム退出処理
+  const handleLeaveTeam = async () => {
+    // チーム情報がない場合、または確認ダイアログで「キャンセル」を押した場合は処理を中断
+    if (!team) return;
+    if (!window.confirm(`本当にチーム「${team.name}」から退出しますか？`)) return;
+
+    setIsActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const req: TeamLeaveReq = { team_id: team.id };
+      await apiClient.post("/team/leave", req);
+      // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
+      fetchTeamData();
+    } catch (error) {
+      console.error(error);
+      handleError(error, 'チームの退出に失敗しました。');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // ▼ エラーハンドリング共通化
   const handleError = (error: unknown, defaultMsg: string) => {
     let msg = defaultMsg;
     if (axios.isAxiosError(error) && error.response) {
@@ -106,14 +169,6 @@ export default function TeamPage(props: TeamProps) {
       if (data?.message) msg = data.message;
     }
     setErrorMsg(msg);
-  };
-
-  // 招待コードのコピー
-  const copyCode = () => {
-    if (team) {
-      navigator.clipboard.writeText(team.invite_code);
-      alert('招待コードをコピーしました');
-    }
   };
 
   // スコアに基づく状態判定
@@ -143,7 +198,7 @@ export default function TeamPage(props: TeamProps) {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: '#f5f7fa' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden'}}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
@@ -194,7 +249,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームを新規作成
                 </Typography>
-                <Typography variant="body2" color="text.secondary" align="center">
+                <Typography variant="body2" color="text.secondary" paragraph align="center">
                   新しいチームを作成し、リーダーとしてメンバーを招待します。
                 </Typography>
                 <TextField
@@ -232,7 +287,7 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームに参加
                 </Typography>
-                <Typography variant="body2" color="text.secondary" align="center">
+                <Typography variant="body2" color="text.secondary" paragraph align="center">
                   共有された「招待コード」を入力して、既存のチームに参加します。
                 </Typography>
                 <TextField
@@ -240,7 +295,7 @@ export default function TeamPage(props: TeamProps) {
                   label="招待コード"
                   variant="outlined"
                   sx={{ mb: 3 }}
-                  value={joinCode}
+                  value={joinCode || isActionLoading ? '読み込み中...' : ''}
                   onChange={(e) => setJoinCode(e.target.value)}
                 />
                 <Button
@@ -249,7 +304,7 @@ export default function TeamPage(props: TeamProps) {
                   size="large"
                   color="warning"
                   onClick={handleJoinTeam}
-                  disabled={!joinCode}
+                  disabled={!joinCode || isActionLoading }
                   sx={{ mt: 'auto' }}
                 >
                   参加する
@@ -279,15 +334,20 @@ export default function TeamPage(props: TeamProps) {
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                  <Typography variant="caption" display="block" color="text.secondary">
-                    招待コード
-                  </Typography>
-                  <Chip
-                    label={team.invite_code}
-                    onDelete={copyCode}
-                    deleteIcon={<ContentCopyIcon />}
-                    sx={{ fontWeight: 'bold', fontSize: '1.1rem', py: 2 }}
-                  />
+                    <TeamInvite
+                      team_id={team.id}
+                      apiInvite={fetchTeamInvite}
+                    />
+                    <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={handleLeaveTeam}
+                    disabled={isActionLoading}
+                    sx={{ mt: 2, display: 'block', ml: { xs: 0, md: 'auto' } }}
+                  >
+                    チームを退出
+                  </Button>
                 </Box>
               </Box>
             </Paper>

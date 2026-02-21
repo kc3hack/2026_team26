@@ -19,8 +19,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/axios';
 import type SigninReq from '../types/request/signinReq';
-import type ApiErrorResponse from '../types/responce/errorRes';
-import type SigninRes from '../types/responce/signinRes';
+import type ApiErrorResponse from '../types/response/errorRes';
+import type SigninRes from '../types/response/signinRes';
 
 const theme = createTheme({
   palette: {

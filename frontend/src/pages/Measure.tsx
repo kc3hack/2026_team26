@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../lib/axios';
 import type FatigueCreateReq from '../types/request/fatigueCreateReq';
-import type FatigueCreateRes from '../types/responce/fatigueCreateRes';
+import type FatigueCreateRes from '../types/response/fatigueCreateRes';
 
 // 【修正】DUMMY_GAME_ID の定義を削除しました
 
