@@ -136,8 +136,15 @@ namespace desktop
             }
             catch
             {
-                // fallback: add default
-                list.Add(("audio_0", "Microphone 0"));
+                // fallback: if enumeration fails (permissions/driver issue), provide a default entry
+                list.Add(("audio_default", "Default Microphone"));
+                return list;
+            }
+
+            // Always offer a default device option at the top to handle permission-denied or exclusive-access cases
+            if (list.Count == 0 || list[0].Id != "audio_default")
+            {
+                list.Insert(0, ("audio_default", "Default Microphone"));
             }
             return list;
         }
@@ -230,7 +237,16 @@ namespace desktop
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to connect audio: " + ex.Message);
+                    // Common cause: microphone permission denied or device in exclusive use
+                    var msg = ex.Message ?? string.Empty;
+                    if (ex is UnauthorizedAccessException || msg.IndexOf("access", StringComparison.OrdinalIgnoreCase) >= 0 || msg.IndexOf("permission", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        MessageBox.Show("Microphone access was denied. Please allow microphone access for this app (Windows: Settings → Privacy → Microphone), close other apps that may be using the microphone, or run the app with elevated privileges.", "Microphone Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to connect audio: " + ex.Message, "Audio Connect Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
             else
