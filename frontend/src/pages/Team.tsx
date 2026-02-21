@@ -25,86 +25,179 @@ import {
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { ApiErrorResponse, CreateTeamRequest, JoinTeamRequest, Team } from '../types';
+import type TeamCreateReq from '../types/request/teamCreateReq';
+import type TeamInviteReq from '../types/request/teamInviteReq'; // 追加
+import type TeamJoinReq from '../types/request/teamJoinReq';
+import type TeamLeaveReq from '../types/request/teamLeaveReq'; // 追加
+import type ApiErrorResponse from '../types/response/errorRes';
+import type MeRes from '../types/response/meRes'; // 追加
+import type TeamFatigueRes from '../types/response/teamFatigueRes';
+import type TeamInviteRes from '../types/response/teamInviteRes'; // 追加
+import type User from '../types/user';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'https://test.sheeplab.net/api';
 
-interface TeamProps {
-  readonly token: string;
-  readonly userId: string;
+interface TeamUI {
+  id: string;
+  name: string;
+  invite_code: string;
+  members: { user_id: string; display_name: string; latest_face_score?: number; last_updated?: string }[];
 }
 
-export default function TeamPage(props: TeamProps) {
+interface TeamProps {
+  token: string;
+  userId: string;
+}
+
+// 🚨 修正3: token はこの「TeamPage」コンポーネントの中でしか使えません！
+// 以下すべての処理を必ずこの中に入れます。
+export default function TeamPage({ token, userId }: TeamProps) {
   const navigate = useNavigate();
   const { inviteCode } = useParams<{ inviteCode: string }>();
 
-  // 状態管理
-  const [team, setTeam] = useState<Team | null>(null);
+  // 状態管理 (新しく作った TeamUI を使うように修正)
+  const [team, setTeam] = useState<TeamUI | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   // 入力フォーム用
   const [createName, setCreateName] = useState('');
-  const [joinCode, setJoinCode] = useState<string | undefined>(inviteCode);
+  const [joinCode, setJoinCode] = useState<string>(inviteCode ?? '');
+
   useEffect(() => {
-      setJoinCode(inviteCode);
+    setJoinCode(inviteCode || '');
   }, [inviteCode]);
 
   // ▼ 自分の所属チーム情報を取得
   const fetchTeamData = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
+
     try {
-      const res = await axios.get<Team>(`${API_URL}/teams/my`, {
-        headers: { Authorization: `Bearer ${props.token}` },
+      // 1. まずは自分の情報を取得し、所属チームがあるか確認する
+      const meRes = await axios.get<MeRes>(`${API_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setTeam(res.data);
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        setTeam(null); // 所属なし
-      } else {
-        console.error('チーム情報取得エラー:', error);
+
+      const myTeams = meRes.data.user_teams;
+
+      // 所属チームがない場合は、未所属画面を表示
+      if (!myTeams || myTeams.length === 0) {
+        setTeam(null);
+        setLoading(false);
+        return;
       }
+
+      // 今回は1つ目のチーム情報を表示する
+      const myTeamId = myTeams[0].id;
+
+      // 2. チームの疲労度データと、招待コードを「同時に」取得する
+      const fatiguePromise = axios.get<TeamFatigueRes>(`${API_URL}/team/fatigue?team_id=${myTeamId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const inviteReq: TeamInviteReq = { team_id: myTeamId };
+      const invitePromise = axios.post<TeamInviteRes>(`${API_URL}/team/invite`, inviteReq, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // API通信を並列で待つ（高速化のため）
+      const [fatigueRes, inviteRes] = await Promise.all([fatiguePromise, invitePromise]);
+
+      // 3. 画面表示用のデータに変換
+      const teamData: TeamUI = {
+        id: fatigueRes.data.team_data.id,
+        name: fatigueRes.data.team_data.name,
+        invite_code: inviteRes.data.invite_code, // 本物の招待コード！
+        members: fatigueRes.data.team_user.map((user: User) => {
+          const userLogs = fatigueRes.data.fatigue_logs[user.id] || [];
+          const latestLog = userLogs.length > 0 ? userLogs[0] : null;
+
+          return {
+            user_id: user.id,
+            display_name: user.display_name,
+            latest_face_score: latestLog?.face_score,
+            last_updated: latestLog?.recorded_at,
+          };
+        })
+      };
+
+      setTeam(teamData);
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('チーム情報の取得に失敗しました。');
     } finally {
       setLoading(false);
     }
-  }, [props.token]);
+  }, [token]);
 
   useEffect(() => {
     fetchTeamData();
   }, [fetchTeamData]);
 
-  // ▼ チーム作成
+ // ▼ チーム作成処理
   const handleCreateTeam = async () => {
-    if (!createName) return;
+    if (!createName.trim()) return;
+    setIsActionLoading(true);
+    setErrorMsg(null);
     try {
-      const body: CreateTeamRequest = { name: createName };
-      await axios.post<Team>(`${API_URL}/teams`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
+      const req: TeamCreateReq = { name: createName };
+      await axios.post(`${API_URL}/team/create`, req, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      alert('チームを作成しました！');
       fetchTeamData();
     } catch (error) {
-      handleError(error, 'チーム作成に失敗しました');
+      console.error(error);
+      handleError(error, 'チーム作成に失敗しました。'); // ← setErrorMsgから変更
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  // ▼ チーム参加
+  // ▼ チーム参加処理
   const handleJoinTeam = async () => {
-    if (!joinCode) return;
+    if (!joinCode || !joinCode.trim()) return;
+    setIsActionLoading(true);
+    setErrorMsg(null);
     try {
-      const body: JoinTeamRequest = { invite_code: joinCode };
-      await axios.post<Team>(`${API_URL}/teams/join`, body, {
-        headers: { Authorization: `Bearer ${props.token}` },
+      const req: TeamJoinReq = { team_tag: joinCode };
+      await axios.post(`${API_URL}/team/join`, req, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      alert('チームに参加しました！');
       fetchTeamData();
     } catch (error) {
-      handleError(error, 'チーム参加に失敗しました。招待コードを確認してください。');
+      console.error(error);
+      handleError(error, 'チームの参加に失敗しました。タグが間違っている可能性があります。'); // ← setErrorMsgから変更
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  // エラーハンドリング共通化
+  // ▼ チーム退出処理
+  const handleLeaveTeam = async () => {
+    // チーム情報がない場合、または確認ダイアログで「キャンセル」を押した場合は処理を中断
+    if (!team) return;
+    if (!window.confirm(`本当にチーム「${team.name}」から退出しますか？`)) return;
+
+    setIsActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const req: TeamLeaveReq = { team_id: team.id };
+      await axios.post(`${API_URL}/team/leave`, req, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
+      fetchTeamData();
+    } catch (error) {
+      console.error(error);
+      handleError(error, 'チームの退出に失敗しました。');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // ▼ エラーハンドリング共通化
   const handleError = (error: unknown, defaultMsg: string) => {
     let msg = defaultMsg;
     if (axios.isAxiosError(error) && error.response) {
@@ -114,7 +207,7 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(msg);
   };
 
-  // 招待コードのコピー
+  // ▼ 招待コードのコピー
   const copyCode = () => {
     if (team) {
       navigator.clipboard.writeText(team.invite_code);
@@ -149,7 +242,7 @@ export default function TeamPage(props: TeamProps) {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: '#f5f7fa' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden'}}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           <IconButton edge="start" onClick={() => navigate('/')} sx={{ mr: 2 }}>
@@ -246,7 +339,7 @@ export default function TeamPage(props: TeamProps) {
                   label="招待コード"
                   variant="outlined"
                   sx={{ mb: 3 }}
-                  value={joinCode}
+                  value={joinCode || isActionLoading ? '読み込み中...' : ''}
                   onChange={(e) => setJoinCode(e.target.value)}
                 />
                 <Button
@@ -255,7 +348,7 @@ export default function TeamPage(props: TeamProps) {
                   size="large"
                   color="warning"
                   onClick={handleJoinTeam}
-                  disabled={!joinCode}
+                  disabled={!joinCode || isActionLoading }
                   sx={{ mt: 'auto' }}
                 >
                   参加する
@@ -293,7 +386,17 @@ export default function TeamPage(props: TeamProps) {
                     onDelete={copyCode}
                     deleteIcon={<ContentCopyIcon />}
                     sx={{ fontWeight: 'bold', fontSize: '1.1rem', py: 2 }}
-                  />
+                    />
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={handleLeaveTeam}
+                    disabled={isActionLoading}
+                    sx={{ mt: 2, display: 'block', ml: { xs: 0, md: 'auto' } }}
+                  >
+                    チームを退出
+                  </Button>
                 </Box>
               </Box>
             </Paper>
@@ -329,7 +432,7 @@ export default function TeamPage(props: TeamProps) {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
                           sx={{
-                            bgcolor: member.user_id === props.userId ? '#667eea' : '#e0e0e0',
+                            bgcolor: member.user_id === userId ? '#667eea' : '#e0e0e0',
                             mr: 2,
                           }}
                         >
@@ -337,7 +440,7 @@ export default function TeamPage(props: TeamProps) {
                         </Avatar>
                         <Box>
                           <Typography variant="subtitle1" fontWeight="bold">
-                            {member.display_name} {member.user_id === props.userId && '(あなた)'}
+                            {member.display_name} {member.user_id === userId && '(あなた)'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {member.last_updated
