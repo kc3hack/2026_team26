@@ -1,4 +1,4 @@
-﻿using NAudio.Wave;
+﻿  using NAudio.Wave;
 //マイク入力テスト用
 using System;
 using System.Linq;
