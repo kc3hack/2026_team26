@@ -2,6 +2,8 @@ import {
   Alert, Box, Button, Card, CardContent, CircularProgress, Container, Paper, TextField, Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+// ▼ 修正1: useParamsとuseLocationを追加
+import { useLocation, useParams } from 'react-router-dom';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import Header from '../components/Header';
@@ -19,6 +21,12 @@ interface ChartData {
 }
 
 export default function History() {
+  // ▼ 修正2: URLから対象のユーザーIDを受け取る（無ければ自分のIDになる）
+  const { targetUserId } = useParams<{ targetUserId?: string }>();
+  // ▼ 修正3: Team画面から渡された「名前」を受け取る
+  const location = useLocation();
+  const userName = location.state?.userName || '自分';
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -26,23 +34,25 @@ export default function History() {
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
 
-  // ▼ 修正1: useCallbackを使わず、直接関数化して依存関係のループを完全に断ち切る
   const fetchHistoryData = async (filterFrom: string, filterTo: string) => {
     setLoading(true);
     setErrorMsg(null);
 
     try {
-      let meRes = await API.authClient().get<MeRes>('/me');
-      if (meRes.status === 401) {
-        await API.tokenRefresh();
-        meRes = await API.authClient().get<MeRes>('/me');
+      // ▼ 修正4: targetUserId がある場合はそれを使う。無い場合は /me で自分のIDを取る。
+      let queryUserId = targetUserId;
+
+      if (!queryUserId) {
+        let meRes = await API.authClient().get<MeRes>('/me');
+        if (meRes.status === 401) {
+          await API.tokenRefresh();
+          meRes = await API.authClient().get<MeRes>('/me');
+        }
+        queryUserId = meRes.data?.user_data?.id;
+        if (!queryUserId) throw new Error("ユーザーIDが見つかりません");
       }
 
-      // 安全対策: ユーザーIDが取れない場合はエラーにして処理を止める
-      const myUserId = meRes.data?.user_data?.id;
-      if (!myUserId) throw new Error("ユーザーIDが見つかりません");
-
-      let url = `/fatigue?u=${myUserId}`;
+      let url = `/fatigue?u=${queryUserId}`;
       if (filterFrom) {
         const d = new Date(`${filterFrom}T00:00:00`);
         if (!isNaN(d.getTime())) url += `&f=${d.toISOString()}`;
@@ -59,14 +69,10 @@ export default function History() {
       }
 
       const fatigueData = fatigueRes.data;
-      // 安全対策: データが配列じゃない変な形で来てもクラッシュさせない
       const items = Array.isArray(fatigueData) ? fatigueData : (fatigueData?.items || []);
 
-      if (!Array.isArray(items)) {
-        throw new Error("データの形式が不正です");
-      }
+      if (!Array.isArray(items)) throw new Error("データの形式が不正です");
 
-      // 安全対策: log自体が空だったり、日付がおかしくても無視して進める (? を多用)
       const formattedData = items.map((log: FatigueLog) => {
         const date = log?.recorded_at ? new Date(log.recorded_at) : new Date();
         return {
@@ -88,12 +94,10 @@ export default function History() {
     }
   };
 
-  // ▼ 修正2: ページを開いた「最初の1回だけ」実行する（[] を設定して絶対ループさせない）
   useEffect(() => {
     fetchHistoryData('', '');
-  }, []);
+  }, [targetUserId]); // targetUserIdが変わったら再取得する
 
-  // ▼ 修正3: ボタンを押した時専用のハンドラーを作成
   const handleSearch = () => {
     fetchHistoryData(fromDate, toDate);
   };
@@ -119,46 +123,19 @@ export default function History() {
 
   return (
     <Box sx={{ minHeight: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: '#f5f7fa' }}>
-      <Header title="過去の記録を検索" showBackButton={true} />
+      {/* ▼ 修正5: 名前が変わるように！ */}
+      <Header title={`${userName}の過去の記録`} showBackButton={true} />
 
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>}
 
         <Paper sx={{ p: 3, mb: 4, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="body1" fontWeight="bold">期間で絞り込み:</Typography>
-          <TextField
-            type="date"
-            size="small"
-            label="開始日"
-            InputLabelProps={{ shrink: true }}
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-          />
+          <TextField type="date" size="small" label="開始日" InputLabelProps={{ shrink: true }} value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           <Typography variant="body1">～</Typography>
-          <TextField
-            type="date"
-            size="small"
-            label="終了日"
-            InputLabelProps={{ shrink: true }}
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSearch} // ← ここも安全な関数に変更
-            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            disabled={loading}
-          >
-            この期間で検索
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleClear}
-            disabled={loading}
-          >
-            クリア
-          </Button>
+          <TextField type="date" size="small" label="終了日" InputLabelProps={{ shrink: true }} value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          <Button variant="contained" color="primary" onClick={handleSearch} disabled={loading} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}>この期間で検索</Button>
+          <Button variant="outlined" onClick={handleClear} disabled={loading}>クリア</Button>
         </Paper>
 
         <Card elevation={2} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, width: '100%' }}>
@@ -176,13 +153,7 @@ export default function History() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="timestamp"
-                      type="number"
-                      domain={['dataMin', 'dataMax']}
-                      scale="time"
-                      tickFormatter={(value) => formatTime(value as number)}
-                    />
+                    <XAxis dataKey="timestamp" type="number" domain={['dataMin', 'dataMax']} scale="time" tickFormatter={(value) => formatTime(value as number)} />
                     <YAxis domain={[0, 100]} />
                     <Tooltip labelFormatter={(label) => formatTime(label as number)} />
                     <Legend />

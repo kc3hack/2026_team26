@@ -42,7 +42,10 @@ function App() {
 
         <Route path="/dashboard" element={userId ? <Dashboard /> : <Navigate to="/login" />} />
 
-        <Route path="/history" element={userId ? <History /> : <Navigate to="/login" />} />
+        <Route
+             path="/history/:targetUserId"
+             element={userId ? <History /> : <Navigate to="/login" />}
+           />
 
         <Route
           path="/measure"
