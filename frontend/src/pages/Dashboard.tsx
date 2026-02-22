@@ -1,10 +1,24 @@
 import {
   Alert,
-  Box, Button, Card, CardContent, CircularProgress, Container,
-  Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import Header from '../components/Header';
 import API from '../lib/axios';
@@ -47,7 +61,7 @@ export default function Dashboard() {
       }
 
       const fatigueData = fatigueRes.data;
-      const items = Array.isArray(fatigueData) ? fatigueData : (fatigueData.items || []);
+      const items = Array.isArray(fatigueData) ? fatigueData : fatigueData.items || [];
 
       const formattedData = items.map((log: FatigueLog) => {
         const date = new Date(log.recorded_at);
@@ -62,9 +76,8 @@ export default function Dashboard() {
       // ▼ 修正3: 単純なreverseではなく、時間順(古い→新しい)に確実に並べ替え
       const sortedData = formattedData.sort((a, b) => a.timestamp - b.timestamp);
       setChartData(sortedData);
-
     } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
+      console.error('Dashboard Fetch Error:', error);
       setErrorMsg('データの取得に失敗しました。');
     } finally {
       setLoading(false);
@@ -77,7 +90,18 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', position: 'absolute', top: 0, left: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          width: '100vw',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -90,24 +114,27 @@ export default function Dashboard() {
   };
 
   return (
-    <Box sx={{
-      minHeight: '100vh',
-      width: '100vw',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      overflowX: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      bgcolor: '#f5f7fa',
-    }}>
-
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100vw',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        overflowX: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        bgcolor: '#f5f7fa',
+      }}
+    >
       <Header title="ダッシュボード" showBackButton={true} />
 
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && (
-          <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {errorMsg}
+          </Alert>
         )}
 
         <Card elevation={2} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, width: '100%' }}>
@@ -118,7 +145,9 @@ export default function Dashboard() {
 
             {chartData.length === 0 ? (
               <Box sx={{ p: 6, textAlign: 'center' }}>
-                <Typography color="text.secondary" variant="h6">まだ疲労度の記録がありません。</Typography>
+                <Typography color="text.secondary" variant="h6">
+                  まだ疲労度の記録がありません。
+                </Typography>
               </Box>
             ) : (
               <Box sx={{ width: '100%', height: 400, mt: 4 }}>

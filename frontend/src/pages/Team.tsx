@@ -1,7 +1,17 @@
 import { AddCircle as AddCircleIcon, GroupAdd as GroupAddIcon } from '@mui/icons-material';
 import {
-  Alert, Avatar, Box, Button, Card, CardContent, Chip, CircularProgress,
-  Container, Paper, TextField, Typography,
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Container,
+  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
@@ -67,7 +77,9 @@ export default function TeamPage(props: TeamProps) {
 
       const myTeamId = myTeams[0].id;
 
-      let fatigues = await API.authClient().get<TeamFatigueRes>(`/team/fatigue?team_id=${myTeamId}`);
+      let fatigues = await API.authClient().get<TeamFatigueRes>(
+        `/team/fatigue?team_id=${myTeamId}`,
+      );
       if (fatigues.status === 401) {
         await API.tokenRefresh();
         fatigues = await API.authClient().get<TeamFatigueRes>(`/team/fatigue?team_id=${myTeamId}`);
@@ -101,7 +113,7 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamCreateReq = { name: createName.trim() };
-      let res = await API.authClient().post('/team/create', req);
+      const res = await API.authClient().post('/team/create', req);
       if (res.status === 401) {
         await API.tokenRefresh();
         await API.authClient().post('/team/create', req);
@@ -120,7 +132,7 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamJoinReq = { team_tag: joinCode.trim() };
-      let res = await API.authClient().post('/team/join', req);
+      const res = await API.authClient().post('/team/join', req);
       if (res.status === 401) {
         await API.tokenRefresh();
         await API.authClient().post('/team/join', req);
@@ -140,7 +152,7 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
     try {
       const req: TeamLeaveReq = { team_id: team.team_data.id };
-      let res = await API.authClient().post('/team/leave', req);
+      const res = await API.authClient().post('/team/leave', req);
       if (res.status === 401) {
         await API.tokenRefresh();
         await API.authClient().post('/team/leave', req);
@@ -176,44 +188,147 @@ export default function TeamPage(props: TeamProps) {
     return '良好';
   };
 
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></Box>;
+  if (loading)
+    return (
+      <Box
+        sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
+        <CircularProgress />
+      </Box>
+    );
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f7fa',
+        width: '100vw',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        overflowX: 'hidden',
+      }}
+    >
       <Header title="チーム管理" showBackButton={true} />
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
-        {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
+        {errorMsg && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorMsg}
+          </Alert>
+        )}
 
         {!team ? (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4, maxWidth: 1000, mx: 'auto' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 4,
+              maxWidth: 1000,
+              mx: 'auto',
+            }}
+          >
             <Box>
-              <Paper sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Paper
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
                 <AddCircleIcon sx={{ fontSize: 60, color: '#667eea', mb: 2 }} />
-                <Typography variant="h5" gutterBottom fontWeight="bold">チームを新規作成</Typography>
-                <TextField fullWidth label="チーム名" variant="outlined" sx={{ mb: 3 }} value={createName} onChange={(e) => setCreateName(e.target.value)} />
-                <Button variant="contained" fullWidth size="large" onClick={handleCreateTeam} disabled={!createName} sx={{ mt: 'auto', bgcolor: '#667eea' }}>作成する</Button>
+                <Typography variant="h5" gutterBottom fontWeight="bold">
+                  チームを新規作成
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="チーム名"
+                  variant="outlined"
+                  sx={{ mb: 3 }}
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  onClick={handleCreateTeam}
+                  disabled={!createName}
+                  sx={{ mt: 'auto', bgcolor: '#667eea' }}
+                >
+                  作成する
+                </Button>
               </Paper>
             </Box>
             <Box>
-              <Paper sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Paper
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
                 <GroupAddIcon sx={{ fontSize: 60, color: '#ff9800', mb: 2 }} />
-                <Typography variant="h5" gutterBottom fontWeight="bold">チームに参加</Typography>
-                <TextField fullWidth label="招待コード" variant="outlined" sx={{ mb: 3 }} disabled={loading} value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
-                <Button variant="contained" fullWidth size="large" color="warning" onClick={handleJoinTeam} disabled={!joinCode || isActionLoading} sx={{ mt: 'auto' }}>参加する</Button>
+                <Typography variant="h5" gutterBottom fontWeight="bold">
+                  チームに参加
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="招待コード"
+                  variant="outlined"
+                  sx={{ mb: 3 }}
+                  disabled={loading}
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  color="warning"
+                  onClick={handleJoinTeam}
+                  disabled={!joinCode || isActionLoading}
+                  sx={{ mt: 'auto' }}
+                >
+                  参加する
+                </Button>
               </Paper>
             </Box>
           </Box>
         ) : (
           <>
             <Paper sx={{ p: 3, mb: 4, bgcolor: 'white', borderRadius: 2 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2, alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+                  gap: 2,
+                  alignItems: 'center',
+                }}
+              >
                 <Box>
-                  <Typography variant="overline" color="text.secondary">Current Team</Typography>
-                  <Typography variant="h4" fontWeight="bold">{team.team_data.name}</Typography>
+                  <Typography variant="overline" color="text.secondary">
+                    Current Team
+                  </Typography>
+                  <Typography variant="h4" fontWeight="bold">
+                    {team.team_data.name}
+                  </Typography>
                 </Box>
                 <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
                   <TeamInvite team_id={team.team_data.id} apiInvite={fetchTeamInvite} />
-                  <Button variant="outlined" color="error" size="small" onClick={handleLeaveTeam} disabled={isActionLoading} sx={{ mt: 2, display: 'block', ml: { xs: 0, md: 'auto' } }}>チームを退出</Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={handleLeaveTeam}
+                    disabled={isActionLoading}
+                    sx={{ mt: 2, display: 'block', ml: { xs: 0, md: 'auto' } }}
+                  >
+                    チームを退出
+                  </Button>
                 </Box>
               </Box>
             </Paper>
@@ -222,7 +337,20 @@ export default function TeamPage(props: TeamProps) {
               メンバーの状況 ({team.team_user.length}名)
             </Typography>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(6, 1fr)' }, gap: 2, mb: 4 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: '1fr 1fr',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(6, 1fr)',
+                },
+                gap: 2,
+                mb: 4,
+              }}
+            >
               {team.team_user.map((member) => {
                 // ▼ 修正3: [-1] バグを修正し、安全に最新のログを取得
                 const logs = team.fatigue_logs[member.id] || [];
@@ -233,16 +361,31 @@ export default function TeamPage(props: TeamProps) {
                     {/* ▼ 修正4: クリックでその人の履歴ページに飛ぶように！ */}
                     <Card
                       elevation={2}
-                      onClick={() => navigate(`/history/${member.id}`, { state: { userName: member.display_name } })}
+                      onClick={() =>
+                        navigate(`/history/${member.id}`, {
+                          state: { userName: member.display_name },
+                        })
+                      }
                       sx={{
                         cursor: 'pointer',
                         transition: '0.2s',
-                        '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
                       }}
                     >
-                      <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <CardContent
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar sx={{ bgcolor: member.id === props.userId ? '#667eea' : '#e0e0e0', mr: 2 }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: member.id === props.userId ? '#667eea' : '#e0e0e0',
+                              mr: 2,
+                            }}
+                          >
                             {member.display_name.charAt(0)}
                           </Avatar>
                           <Box>
@@ -250,7 +393,9 @@ export default function TeamPage(props: TeamProps) {
                               {member.display_name} {member.id === props.userId && '(あなた)'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {latestLog?.recorded_at ? new Date(latestLog.recorded_at).toLocaleString() : '記録なし'}
+                              {latestLog?.recorded_at
+                                ? new Date(latestLog.recorded_at).toLocaleString()
+                                : '記録なし'}
                             </Typography>
                           </Box>
                         </Box>

@@ -15,7 +15,7 @@ function App() {
 
   useEffect(() => {
     API.tokenRefresh();
-  })
+  });
   useEffect(() => {
     if (userId) localStorage.setItem('user_id', userId);
     else localStorage.removeItem('user_id');
@@ -43,9 +43,9 @@ function App() {
         <Route path="/dashboard" element={userId ? <Dashboard /> : <Navigate to="/login" />} />
 
         <Route
-             path="/history/:targetUserId"
-             element={userId ? <History /> : <Navigate to="/login" />}
-           />
+          path="/history/:targetUserId"
+          element={userId ? <History /> : <Navigate to="/login" />}
+        />
 
         <Route
           path="/measure"
