@@ -16,7 +16,6 @@ export default function Header({
   showBackButton = false, // デフォルトは非表示
   showLogoutButton = false, // デフォルトは非表示
   onLogout,
-  backPath = '/',
 }: HeaderProps) {
   const navigate = useNavigate();
 
@@ -28,7 +27,7 @@ export default function Header({
           <IconButton
             edge="start"
             color="inherit"
-            onClick={() => navigate(backPath)}
+            onClick={() => navigate(-1)} // 1つ前のページに戻る
             sx={{ mr: 2 }}
           >
             <ArrowBackIcon />
