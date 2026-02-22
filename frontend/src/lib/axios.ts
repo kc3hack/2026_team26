@@ -51,9 +51,11 @@ class API {
     const body: RefreshReq = {
       refresh_token: this.refresh,
     };
-    const res: RefreshRes = await this.apiClient.post('/auth/refresh', body);
-    this.refresh = res.refresh_token;
-    this.token = res.access_token;
+    const res = await this.apiClient.post<RefreshRes>('/auth/refresh', body);
+    const data = res.data;
+    this.setRefreshToken(data.refresh_token);
+    this.setToken(data.access_token);
+    return data;
   }
 
   async logout() {

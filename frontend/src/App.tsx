@@ -14,6 +14,9 @@ function App() {
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('user_id'));
 
   useEffect(() => {
+    API.tokenRefresh();
+  })
+  useEffect(() => {
     if (userId) localStorage.setItem('user_id', userId);
     else localStorage.removeItem('user_id');
   }, [userId]);
