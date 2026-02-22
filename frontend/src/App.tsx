@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import API from './lib/axios';
 import Dashboard from './pages/Dashboard';
+import History from './pages/History';
 import Login from './pages/Login';
 import Measure from './pages/Measure';
 import Menu from './pages/Menu';
@@ -12,6 +13,9 @@ import TeamPage from './pages/Team';
 function App() {
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('user_id'));
 
+  useEffect(() => {
+    API.tokenRefresh();
+  });
   useEffect(() => {
     if (userId) localStorage.setItem('user_id', userId);
     else localStorage.removeItem('user_id');
@@ -37,6 +41,11 @@ function App() {
         <Route path="/" element={userId ? <Menu logout={logout} /> : <Navigate to="/login" />} />
 
         <Route path="/dashboard" element={userId ? <Dashboard /> : <Navigate to="/login" />} />
+
+        <Route
+          path="/history/:targetUserId"
+          element={userId ? <History /> : <Navigate to="/login" />}
+        />
 
         <Route
           path="/measure"

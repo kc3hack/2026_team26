@@ -15,8 +15,8 @@ import type TeamFatigueRes from '../types/response/teamFatigueRes';
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F', '#FFBB28', '#FF8042'];
 
 type Props = {
-  teamData: TeamFatigueRes
-}
+  teamData: TeamFatigueRes;
+};
 
 export default function TeamFatigueChart(props: Props) {
   // 1. バラバラの記録時間をひとつの時系列データにまとめる処理

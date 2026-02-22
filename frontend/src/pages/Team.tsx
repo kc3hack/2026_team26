@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+// ▼ 修正1: useNavigate を追加
+import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import TeamFatigueChart from '../components/TeamFatigueChart';
 import TeamInvite from '../components/teamInvite';
@@ -23,9 +24,9 @@ import API from '../lib/axios';
 import type TeamCreateReq from '../types/request/teamCreateReq';
 import type TeamInviteReq from '../types/request/teamInviteReq';
 import type TeamJoinReq from '../types/request/teamJoinReq';
-import type TeamLeaveReq from '../types/request/teamLeaveReq'; // 追加
+import type TeamLeaveReq from '../types/request/teamLeaveReq';
 import type ApiErrorResponse from '../types/response/errorRes';
-import type MeRes from '../types/response/meRes'; // 追加
+import type MeRes from '../types/response/meRes';
 import type TeamFatigueRes from '../types/response/teamFatigueRes';
 import type TeamInviteRes from '../types/response/teamInviteRes';
 
@@ -35,18 +36,15 @@ interface TeamProps {
 
 type StatusColor = 'default' | 'error' | 'warning' | 'success';
 
-// 🚨 修正3: token はこの「TeamPage」コンポーネントの中でしか使えません！
-// 以下すべての処理を必ずこの中に入れます。
 export default function TeamPage(props: TeamProps) {
   const { inviteCode } = useParams<{ inviteCode: string }>();
+  const navigate = useNavigate(); // ▼ 修正2: 画面遷移用の機能を追加
 
-  // 状態管理 (新しく作った TeamUI を使うように修正)
   const [team, setTeam] = useState<TeamFatigueRes | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
-  // 入力フォーム用
   const [createName, setCreateName] = useState('');
   const [joinCode, setJoinCode] = useState<string>(inviteCode ?? '');
 
@@ -54,44 +52,39 @@ export default function TeamPage(props: TeamProps) {
     setJoinCode(inviteCode || '');
   }, [inviteCode]);
 
-  // ▼ 自分の所属チーム情報を取得
   const fetchTeamData = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
-
     try {
-      // 1. まずは自分の情報を取得し、所属チームがあるか確認する
-      let meRes = await API.authClient().get<MeRes>('/me');
-      if (meRes.status === 401) {
-        await API.tokenRefresh();
+      let meRes;
+      try {
         meRes = await API.authClient().get<MeRes>('/me');
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          await API.tokenRefresh();
+          meRes = await API.authClient().get<MeRes>('/me');
+        } else {
+          throw err;
+        }
       }
 
       const myTeams = meRes.data.user_teams;
-
-      // 所属チームがない場合は、未所属画面を表示
       if (!myTeams || myTeams.length === 0) {
+        setTeam(undefined);
         setLoading(false);
         return;
       }
 
-      // 今回は1つ目のチーム情報を表示する
       const myTeamId = myTeams[0].id;
 
-      // 2. チームの疲労度データと、招待コードを「同時に」取得する
       let fatigues = await API.authClient().get<TeamFatigueRes>(
         `/team/fatigue?team_id=${myTeamId}`,
       );
       if (fatigues.status === 401) {
         await API.tokenRefresh();
-        fatigues = await API.authClient().get<TeamFatigueRes>(
-          `/team/fatigue?team_id=${myTeamId}`,
-        );
+        fatigues = await API.authClient().get<TeamFatigueRes>(`/team/fatigue?team_id=${myTeamId}`);
       }
-      const teamData = fatigues.data;
-      setTeam(teamData);
-
-      // 3. 画面表示用のデータに変換
+      setTeam(fatigues.data);
     } catch (error) {
       console.error(error);
       setErrorMsg('チーム情報の取得に失敗しました。');
@@ -103,27 +96,23 @@ export default function TeamPage(props: TeamProps) {
   useEffect(() => {
     fetchTeamData();
   }, [fetchTeamData]);
-  // 招待API通信部分
+
   const fetchTeamInvite = async (req: TeamInviteReq): Promise<TeamInviteRes> => {
     let res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
     if (res.status === 401) {
       await API.tokenRefresh();
       res = await API.authClient().post<TeamInviteRes>('/team/invite', req);
     }
-    if (res.status !== 200) {
-      throw new Error("couldn't get invite code");
-    }
-    const data = res.data;
-    return data;
+    if (res.status !== 200) throw new Error("couldn't get invite code");
+    return res.data;
   };
 
-  // ▼ チーム作成処理
   const handleCreateTeam = async () => {
     if (!createName.trim()) return;
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
-      const req: TeamCreateReq = { name: createName };
+      const req: TeamCreateReq = { name: createName.trim() };
       const res = await API.authClient().post('/team/create', req);
       if (res.status === 401) {
         await API.tokenRefresh();
@@ -131,20 +120,18 @@ export default function TeamPage(props: TeamProps) {
       }
       fetchTeamData();
     } catch (error) {
-      console.error(error);
-      handleError(error, 'チーム作成に失敗しました。'); // ← setErrorMsgから変更
+      handleError(error, 'チーム作成に失敗しました。');
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  // ▼ チーム参加処理
   const handleJoinTeam = async () => {
     if (!joinCode.trim()) return;
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
-      const req: TeamJoinReq = { team_tag: joinCode };
+      const req: TeamJoinReq = { team_tag: joinCode.trim() };
       const res = await API.authClient().post('/team/join', req);
       if (res.status === 401) {
         await API.tokenRefresh();
@@ -152,19 +139,15 @@ export default function TeamPage(props: TeamProps) {
       }
       fetchTeamData();
     } catch (error) {
-      console.error(error);
-      handleError(error, 'チームの参加に失敗しました。タグが間違っている可能性があります。'); // ← setErrorMsgから変更
+      handleError(error, 'チームの参加に失敗しました。タグが間違っている可能性があります。');
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  // ▼ チーム退出処理
   const handleLeaveTeam = async () => {
-    // チーム情報がない場合、または確認ダイアログで「キャンセル」を押した場合は処理を中断
     if (!team) return;
     if (!window.confirm(`本当にチーム「${team.team_data.name}」から退出しますか？`)) return;
-
     setIsActionLoading(true);
     setErrorMsg(null);
     try {
@@ -174,17 +157,14 @@ export default function TeamPage(props: TeamProps) {
         await API.tokenRefresh();
         await API.authClient().post('/team/leave', req);
       }
-      // 退出に成功したら、最新の状態を取得し直す（所属チームがなくなるので、自動的に未所属画面に戻ります！）
       fetchTeamData();
     } catch (error) {
-      console.error(error);
       handleError(error, 'チームの退出に失敗しました。');
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  // ▼ エラーハンドリング共通化
   const handleError = (error: unknown, defaultMsg: string) => {
     let msg = defaultMsg;
     if (axios.isAxiosError(error) && error.response) {
@@ -194,7 +174,6 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(msg);
   };
 
-  // スコアに基づく状態判定
   const getStatusColor = (score?: number) => {
     if (score === undefined) return 'default';
     if (score <= 30) return 'error';
@@ -209,8 +188,7 @@ export default function TeamPage(props: TeamProps) {
     return '良好';
   };
 
-  // 読み込み中
-  if (loading) {
+  if (loading)
     return (
       <Box
         sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
@@ -218,7 +196,6 @@ export default function TeamPage(props: TeamProps) {
         <CircularProgress />
       </Box>
     );
-  }
 
   return (
     <Box
@@ -232,9 +209,7 @@ export default function TeamPage(props: TeamProps) {
         overflowX: 'hidden',
       }}
     >
-      {/* ▼ 追加: ヘッダーコンポーネントをここで呼び出す ▼ */}
       <Header title="チーム管理" showBackButton={true} />
-      {/* 【修正】maxWidthを "xl" に拡張して大画面対応 */}
       <Container maxWidth="xl" sx={{ mt: 4, pb: 4 }}>
         {errorMsg && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -243,8 +218,6 @@ export default function TeamPage(props: TeamProps) {
         )}
 
         {!team ? (
-          // ▼▼▼ チーム未所属時の画面 ▼▼▼
-          // 【修正】大画面で広がりすぎないよう maxWidth を設定し、中央寄せ(mx: auto)
           <Box
             sx={{
               display: 'grid',
@@ -268,9 +241,6 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームを新規作成
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
-                  新しいチームを作成し、リーダーとしてメンバーを招待します。
-                </Typography>
                 <TextField
                   fullWidth
                   label="チーム名"
@@ -291,7 +261,6 @@ export default function TeamPage(props: TeamProps) {
                 </Button>
               </Paper>
             </Box>
-
             <Box>
               <Paper
                 sx={{
@@ -306,15 +275,13 @@ export default function TeamPage(props: TeamProps) {
                 <Typography variant="h5" gutterBottom fontWeight="bold">
                   チームに参加
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph align="center">
-                  共有された「招待コード」を入力して、既存のチームに参加します。
-                </Typography>
                 <TextField
                   fullWidth
                   label="招待コード"
                   variant="outlined"
                   sx={{ mb: 3 }}
                   disabled={loading}
+                  value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
                 />
                 <Button
@@ -332,9 +299,7 @@ export default function TeamPage(props: TeamProps) {
             </Box>
           </Box>
         ) : (
-          // ▼▼▼ チーム所属時の画面（メンバーリスト） ▼▼▼
           <>
-            {/* チームヘッダー情報 */}
             <Paper sx={{ p: 3, mb: 4, bgcolor: 'white', borderRadius: 2 }}>
               <Box
                 sx={{
@@ -372,65 +337,82 @@ export default function TeamPage(props: TeamProps) {
               メンバーの状況 ({team.team_user.length}名)
             </Typography>
 
-            {/* 【修正】レスポンシブなグリッドレイアウト設定 */}
             <Box
               sx={{
                 display: 'grid',
                 gridTemplateColumns: {
-                  xs: '1fr', // スマホ: 1列
-                  sm: '1fr 1fr', // タブレット: 2列
-                  md: 'repeat(3, 1fr)', // 小さなPC: 3列
-                  lg: 'repeat(4, 1fr)', // 一般的なPC: 4列
-                  xl: 'repeat(6, 1fr)', // 大画面: 6列
+                  xs: '1fr',
+                  sm: '1fr 1fr',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(6, 1fr)',
                 },
                 gap: 2,
+                mb: 4,
               }}
             >
-              {team.team_user.map((member) => (
-                <Box key={member.id}>
-                  <Card elevation={2}>
-                    <CardContent
+              {team.team_user.map((member) => {
+                // ▼ 修正3: [-1] バグを修正し、安全に最新のログを取得
+                const logs = team.fatigue_logs[member.id] || [];
+                const latestLog = logs.length > 0 ? logs.at(-1) : undefined;
+
+                return (
+                  <Box key={member.id}>
+                    {/* ▼ 修正4: クリックでその人の履歴ページに飛ぶように！ */}
+                    <Card
+                      elevation={2}
+                      onClick={() =>
+                        navigate(`/history/${member.id}`, {
+                          state: { userName: member.display_name },
+                        })
+                      }
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: '0.2s',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: member.id === props.userId ? '#667eea' : '#e0e0e0',
-                            mr: 2,
-                          }}
-                        >
-                          {member.display_name.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {member.display_name} {member.id === props.userId && '(あなた)'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {team.fatigue_logs[member.id]?.[-1]?.recorded_at
-                              ? new Date(team.fatigue_logs[member.id][-1].recorded_at).toLocaleString()
-                              : '記録なし'}
-                          </Typography>
+                      <CardContent
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar
+                            sx={{
+                              bgcolor: member.id === props.userId ? '#667eea' : '#e0e0e0',
+                              mr: 2,
+                            }}
+                          >
+                            {member.display_name.charAt(0)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {member.display_name} {member.id === props.userId && '(あなた)'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {latestLog?.recorded_at
+                                ? new Date(latestLog.recorded_at).toLocaleString()
+                                : '記録なし'}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
-
-                      {/* ステータスチップ */}
-                      <Chip
-                        label={getStatusLabel(team.fatigue_logs[member.id]?.[-1]?.face_score)}
-                        color={getStatusColor(team.fatigue_logs[member.id]?.[-1]?.face_score) as StatusColor}
-                        variant={team.fatigue_logs[member.id]?.[-1]?.face_score === undefined ? 'outlined' : 'filled'}
-                      />
-                    </CardContent>
-                  </Card>
-                </Box>
-              ))}
-              </Box>
-              <Box>
-                <TeamFatigueChart teamData={team} />
-              </Box>
+                        <Chip
+                          label={getStatusLabel(latestLog?.face_score)}
+                          color={getStatusColor(latestLog?.face_score) as StatusColor}
+                          variant={latestLog?.face_score === undefined ? 'outlined' : 'filled'}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Box>
+                );
+              })}
+            </Box>
+            <Box>
+              <TeamFatigueChart teamData={team} />
+            </Box>
           </>
         )}
       </Container>

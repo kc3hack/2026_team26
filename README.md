@@ -1,21 +1,22 @@
 # プロダクト名
-<!-- プロダクト名に変更してください -->
+はよ寝ろくん
 
-![プロダクト名](https://kc3.me/cms/wp-content/uploads/2026/02/444e7120d5cdd74aa75f7a94bf8821a5-scaled.png)
-<!-- プロダクト名・イメージ画像を差し変えてください -->
-
+![プロダクトイメージ](https://kc3.me/cms/wp-content/uploads/2026/02/444e7120d5cdd74aa75f7a94bf8821a5-scaled.png)
 
 ## チーム名
-チーム26 同級生3卒年
-<!-- チームIDとチーム名を入力してください -->
-
+チーム26 — 同級生3卒年
 
 ## 背景・課題・解決されること
-夜中にゲームをしてしまい夜更かししてしまうことが我々学生は多々ありますよね。「ゲームの辞め時がわからない」なんてこと、ありますよね。その「辞め時」を決めてくれるアプリがあったら便利だと思い、このシステムを思いつきました。自分がどれくらい疲れてるか分からず、気付かぬうちに無理な夜更かししてしまった。こんなことを防ぐために、表情や声から疲労度を測り、一定のラインを越えたらシステムから「そろそろ辞め時ですよ」と警告が来ることにより、学生の夜更かしを抑制することができると考えました。
-<!-- テーマ「関西をいい感じに」に対して、考案するプロダクトがどういった(Why)背景から思いついたのか、どのよう(What)な課題があり、どのよう(How)に解決するのかを入力してください -->
+学生を中心に、夜更かしの原因として「ゲームをやめるタイミングがわからない」ことがよく挙げられます。自分の疲労状態を正確に把握できないため、無意識に深夜までプレイを続けてしまう問題を解決したいと考えました。
 
+カメラやマイクから取得した表情・まばたき頻度、視線、発話の音声特徴などを解析し、ユーザーの疲労度を算出します。疲労度が一定の閾値を超えた場合にアプリから警告を出すことで、無理な夜更かしを抑制します。計測データはチーム内で共有でき、チーム全体の健康管理にも活用できます。
 
 ## プロダクト説明
+- カメラで瞬きや視線の変化を検出
+- マイクで発話時の周波数変動などの音声特徴を解析
+- これらの指標から疲労度を算出し、閾値超過で通知を発行
+- チーム内で疲労度データを共有・可視化
+
 カメラで瞬きの頻度や目線、マイクで発話時の周波数の揺らぎをそれぞれ測定し、それらに基づき疲労度を計測します。この疲労度が一定の値を超えたら使用者に対して警告を出すようになっています。
 また、この計測した疲労度はチームの間で共有できるようになっています。
 <!-- 開発したプロダクトの説明を入力してください -->
@@ -23,42 +24,43 @@
 
 ## 操作説明・デモ動画
 [デモ動画はこちら](https://www.youtube.com/watch?v=fbzGp0XJGq8)
-<!-- 開発したプロダクトの操作説明について入力してください。また、操作説明デモ動画があれば、埋め込みやリンクを記載してください -->
-
 
 ## 注力したポイント
-
-<!-- 開発したプロダクトの中で、特に注力して作成した箇所・ポイントについて入力してください -->
 ### アイデア面
+
+夜更かしの抑制を目的とした、行動に寄与するフィードバック設計
 
 ### デザイン面
 
+シンプルで気軽に使えるUI/UXを重視して実装
+MUIを用いて簡単にかつ最低限の品質を担保
+
 ### その他
 
-GitHubProjectsを用いたタスク管理、GitHubActionsを用いたCI/CDなど、開発を爆速かつ正確にする工夫を凝らしました。
-https://github.com/orgs/kc3hack/projects/20
+ GitHub Projectsによるタスク管理や、GitHub Actionsを用いたCI/CDで開発効率と品質を担保
+
+プロジェクト管理ボード: https://github.com/orgs/kc3hack/projects/20
 
 ## 使用技術
 
 ### フロントエンド
-
-[![frontend](https://skillicons.dev/icons?i=ts,react,vite,npm&theme=light)](https://skillicons.dev)
-
+[![frontend](https://go-skill-icons.vercel.app/api/icons?i=ts,react,vite,npm,mui&theme=light)](https://skillicons.dev)
 
 ### バックエンド
-
-[![backend](https://skillicons.dev/icons?i=go,postgres&theme=light)](https://skillicons.dev)
-
+[![backend](https://go-skill-icons.vercel.app/api/icons?i=go,postgres&theme=light)](https://skillicons.dev)
 
 ### デスクトップアプリ
+[![desktop app](https://go-skill-icons.vercel.app/api/icons?i=cs,net&theme=light)](https://skillicons.dev)
 
-[![desktop app](https://skillicons.dev/icons?i=cs,python&theme=light)](https://skillicons.dev)
+
+### CI/CD, deploy
+
+[![cd/ci](https://go-skill-icons.vercel.app/api/icons?i=git,github,githubactions,docker,tailscale&theme=light)](https://skillicons.dev)
 
 ### ツール
-
-[![tools](https://skillicons.dev/icons?i=visualstudio,vscode,postman,git,github,githubactions,docker&theme=light)](https://skillicons.dev)
+[![tools](https://go-skill-icons.vercel.app/api/icons?i=visualstudio,vscode,postman,windows&theme=light)](https://skillicons.dev)
 
 <!--
-markdownの記法はこちらを参照してください！
+Markdown の書き方参考:
 https://docs.github.com/ja/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
 -->

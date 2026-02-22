@@ -1,5 +1,5 @@
 package request
 
 type TeamJoin struct {
-	Tag string `json:"tag" validate:"required"`
+	Tag string `json:"team_tag" validate:"required"`
 }

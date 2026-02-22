@@ -21,6 +21,50 @@ public class FaceFatigueEstimator : IDisposable
     private readonly CascadeClassifier _faceCascade;
     private readonly CascadeClassifier _eyeCascade;
 
+    public double CurrentScore { get; private set; } = 100.0;
+
+    private const double DecreaseRate = 2.0;    // ダメな時の減少スピード
+    private const double IncreaseRate = 0.5;    // 回復スピード（減少より遅く設定）
+
+    // 【新設】回復に関する設定
+    private int _safeFrameCounter = 0;          // 正常状態の連続カウント
+    private const int RecoveryWaitFrames = 90;  // 30fpsの場合、約3秒間の待機
+    // -----------------------
+
+    private void UpdateScore(bool isBadCondition)
+    {
+        if (isBadCondition)
+        {
+            // 異常（顔なし・目閉じ）があれば、即座に減点
+            CurrentScore -= DecreaseRate;
+
+            // 重要：異常があった瞬間に「回復までの待ち時間」をリセット
+            _safeFrameCounter = 0;
+        }
+        else
+        {
+            // 正常（顔あり・目パッチリ）なら、カウント開始
+            _safeFrameCounter++;
+
+            // 指定したフレーム数（例：90フレーム=3秒）連続で正常な時だけ回復
+            if (_safeFrameCounter >= RecoveryWaitFrames)
+            {
+                CurrentScore += IncreaseRate;
+
+                // (オプション) 回復時はカウンタを一定値に止めておき、
+                // 次に異常が出たらまた0から数え直しにする
+                _safeFrameCounter = RecoveryWaitFrames;
+            }
+            else
+            {
+                // 3秒経過するまでは、正常であってもスコアは維持（増加しない）
+            }
+        }
+
+        // 0?100の間にクランプ
+        CurrentScore = Math.Max(0.0, Math.Min(100.0, CurrentScore));
+    }
+
     public FaceFatigueEstimator(string faceCascadePath = null, string eyeCascadePath = null)
     {
         // use default OpenCV Haar cascades if paths not provided
@@ -38,12 +82,12 @@ public class FaceFatigueEstimator : IDisposable
         Cv2.CvtColor(frame, gray, ColorConversionCodes.BGR2GRAY);
         Cv2.EqualizeHist(gray, gray);
 
-        var faces = _faceCascade.DetectMultiScale(gray, 1.1, 4, HaarDetectionType.ScaleImage);
+        var faces = _faceCascade.DetectMultiScale(gray, 1.05, 6, HaarDetectionTypes.ScaleImage);
         foreach (var f in faces)
         {
             var faceInfo = new FaceInfo { FaceRect = f };
             // restrict eye search to upper part of face
-            var eyeRegion = new Rect(f.X, f.Y, f.Width, f.Height / 2);
+            var eyeRegion = new Rect(f.X, (int)(f.Y + f.Height * 0.2), f.Width, (int)(f.Height * 0.35));
             var roi = new Mat(gray, eyeRegion);
             var eyes = _eyeCascade.DetectMultiScale(roi, 1.1, 4);
             Rect left = new Rect();
