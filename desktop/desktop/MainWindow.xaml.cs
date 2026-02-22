@@ -304,14 +304,6 @@ namespace desktop
                 _audioConnected = false;
             }
         }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            CompositionTarget.Rendering -= UpdateFrame;
-            _camera?.Dispose();
-            _audio?.Dispose();
-            base.OnClosed(e);
-        }
     }
 
 }

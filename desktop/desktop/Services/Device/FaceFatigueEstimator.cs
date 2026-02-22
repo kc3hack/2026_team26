@@ -38,7 +38,7 @@ public class FaceFatigueEstimator : IDisposable
         Cv2.CvtColor(frame, gray, ColorConversionCodes.BGR2GRAY);
         Cv2.EqualizeHist(gray, gray);
 
-        var faces = _faceCascade.DetectMultiScale(gray, 1.1, 4, HaarDetectionType.ScaleImage);
+        var faces = _faceCascade.DetectMultiScale(gray, 1.1, 4, HaarDetectionTypes.ScaleImage);
         foreach (var f in faces)
         {
             var faceInfo = new FaceInfo { FaceRect = f };
