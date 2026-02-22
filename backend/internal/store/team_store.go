@@ -74,7 +74,7 @@ func (s *TeamStore) existUser(id string) error {
 	return nil
 }
 
-func (s *TeamStore) GetByTeamTag(teamTag string) (*model.Team, error) {
+func (s *TeamStore) GetByTeamTag(teamTag string) (string, error) {
 	var teamID string
 	// Some invites may have a zero-value timestamp inserted instead of NULL.
 	// Treat a zero timestamp (0001-01-01) as unlimited as well by
@@ -83,9 +83,9 @@ func (s *TeamStore) GetByTeamTag(teamTag string) (*model.Team, error) {
 	query := `SELECT team_id FROM team_tags WHERE tag=$1 AND COALESCE(NULLIF(limited_until, '0001-01-01 00:00:00'::timestamp), 'infinity') > NOW()`
 	err := s.DB.QueryRow(query, teamTag).Scan(&teamID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return s.GetByTeamID(teamID)
+	return teamID, nil
 }
 
 func (s *TeamStore) Leave(teamId, userId string) error {
