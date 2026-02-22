@@ -6,7 +6,7 @@ import type RefreshRes from '../types/response/refreshRes';
 const baseURL = 'https://test.sheeplab.net/api';
 
 class API {
-  post(arg0: string, arg1: { user_id: string; face_score: number; voice_score: number; }) {
+  post() {
     throw new Error('Method not implemented.');
   }
   public apiClient: AxiosInstance;
