@@ -5,35 +5,139 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:desktop"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Window.Background>
-        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="White"/>
-            <GradientStop Color="White" Offset="1"/>
-        </LinearGradientBrush>
-    </Window.Background>
+        Title="Monitoring Dashboard" Height="700" Width="1000"
+        Background="White" UseLayoutRounding="True">
+
+    <Window.Resources>
+        <Style x:Key="MuiLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#888888"/>
+            <Setter Property="Margin" Value="12,-7,0,0"/>
+            <Setter Property="Padding" Value="4,0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Panel.ZIndex" Value="10"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+
+        <Style x:Key="MuiBorder" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#E5E5E5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Height" Value="48"/>
+        </Style>
+
+        <Style x:Key="FlatComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton BorderThickness="0" Background="Transparent" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent">
+                                            <Path x:Name="Arrow" Fill="#AAA" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Data="M 0 0 L 4 4 L 8 0 Z"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                            <Popup x:Name="PART_Popup" AllowsTransparency="true" Placement="Bottom" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="White" BorderBrush="#E5E5E5" BorderThickness="1" MaxHeight="{TemplateBinding MaxDropDownHeight}" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer>
+                                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MuiButton" TargetType="Button">
+            <Setter Property="Background" Value="#1976D2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Grid>
-        <StackPanel Orientation="Vertical">
-            <!-- Device selection row: Camera and Microphone with labels -->
-            <StackPanel Orientation="Horizontal" Margin="8" VerticalAlignment="Top" HorizontalAlignment="Left">
-                <StackPanel Orientation="Vertical">
-                    <TextBlock FontWeight="Bold" Margin="0,0,0,4">Camera</TextBlock>
-                    <ComboBox x:Name="deviceCombo" Width="240" Margin="0,0,8,0" />
-                </StackPanel>
-                <Button x:Name="connectButton" Content="Connect" Width="100" Click="ConnectButton_Click" VerticalAlignment="Bottom" />
-                <StackPanel Orientation="Vertical" Margin="16,0,0,0">
-                    <TextBlock FontWeight="Bold" Margin="0,0,0,4">Microphone</TextBlock>
-                    <ComboBox x:Name="audioCombo" Width="240" Margin="0,0,8,0" />
-                </StackPanel>
-                <Button x:Name="audioConnectButton" Content="Connect Audio" Width="120" Click="AudioConnectButton_Click" VerticalAlignment="Bottom" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White" Padding="20,30">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+                <Grid Margin="0,0,10,0" Width="260">
+                    <TextBlock Text="Camera" Style="{StaticResource MuiLabel}"/>
+                    <Border Style="{StaticResource MuiBorder}">
+                        <ComboBox x:Name="deviceCombo" Style="{StaticResource FlatComboBox}"/>
+                    </Border>
+                </Grid>
+                <Button x:Name="connectButton" Content="CONNECT" Style="{StaticResource MuiButton}" Width="100" Margin="0,0,40,0" Click="ConnectButton_Click"/>
+
+                <Grid Margin="0,0,10,0" Width="260">
+                    <TextBlock Text="Microphone" Style="{StaticResource MuiLabel}"/>
+                    <Border Style="{StaticResource MuiBorder}">
+                        <ComboBox x:Name="audioCombo" Style="{StaticResource FlatComboBox}"/>
+                    </Border>
+                </Grid>
+                <Button x:Name="audioConnectButton" Content="CONNECT" Style="{StaticResource MuiButton}" Width="100" Click="AudioConnectButton_Click"/>
             </StackPanel>
-            <Image x:Name="imageDisplay" Stretch="Uniform" Height="350" Width="Auto" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="10">
-            <ProgressBar x:Name="volumeBar" Minimum="0" Maximum="1" Height="20" Width="200" RenderTransformOrigin="0.539,1.237"/>
-            <TextBlock x:Name="faceScoreText" Text="Face: --" FontSize="16" Foreground="Black"/>
-            <TextBlock x:Name="audioScoreText" Text="Voice: --" FontSize="16" Foreground="Black"/>
-            <Button x:Name="sendFatigueButton" Content="Send Fatigue" Width="120" Margin="8,0,0,0" Click="SendFatigueButton_Click" />
-        </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Margin="20,0" Background="#FAFAFA" CornerRadius="8" BorderBrush="#F0F0F0" BorderThickness="1">
+            <Grid>
+                <Image x:Name="imageDisplay" Stretch="Uniform" Margin="10"/>
+
+                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="15">
+                    <Border Background="#CC222222" CornerRadius="4" Padding="10,5" Margin="0,0,0,5">
+                        <TextBlock x:Name="faceScoreText" Text="Face Score: --" Foreground="White" FontSize="12"/>
+                    </Border>
+                    <Border Background="#CC222222" CornerRadius="4" Padding="10,5">
+                        <TextBlock x:Name="audioScoreText" Text="Voice Score: --" Foreground="White" FontSize="12"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="White" Padding="30,20">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="MIC LEVEL" FontSize="10" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                    <ProgressBar x:Name="volumeBar" Minimum="0" Maximum="1" Width="160" Height="2" Foreground="#1976D2" Background="#F0F0F0" BorderThickness="0"/>
+                </StackPanel>
+
+                <Button x:Name="sendFatigueButton" Content="SEND ANALYSIS" 
+                        HorizontalAlignment="Right" Style="{StaticResource MuiButton}"
+                        Background="#455A64" Width="150" Height="36" FontSize="11"
+                        Click="SendFatigueButton_Click" />
+            </Grid>
+        </Border>
     </Grid>
 </Window>
