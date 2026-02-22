@@ -3,13 +3,14 @@ import {
   Alert,
   Box,
   Button,
-  Card, CardContent,
+  Card,
+  CardContent,
   CircularProgress,
   Container,
   Paper,
   Slider,
   Stack,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import Header from '../components/Header';
@@ -38,20 +39,20 @@ export default function Measure({ userId }: MeasureProps) {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 1280, height: 720 },
-          audio: true
+          audio: true,
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsCameraReady(true);
         }
       } catch (err) {
-        console.error("Camera Error:", err);
-        setError("カメラまたはマイクの起動に失敗しました。");
+        console.error('Camera Error:', err);
+        setError('カメラまたはマイクの起動に失敗しました。');
       }
     };
     startCamera();
     return () => {
-      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (stream) stream.getTracks().forEach((track) => track.stop());
     };
   }, []);
 
@@ -59,7 +60,7 @@ export default function Measure({ userId }: MeasureProps) {
   // --- データを送信する関数 ---
   const handleSubmit = async () => {
     if (!userId) {
-      setError("ユーザーIDが見つかりません。再ログインしてください。");
+      setError('ユーザーIDが見つかりません。再ログインしてください。');
       return;
     }
 
@@ -83,17 +84,28 @@ export default function Measure({ userId }: MeasureProps) {
         res = await API.authClient().post('/fatigue', payload);
       }
 
-      setSuccessMsg("測定データを保存しました！ダッシュボードを確認してください。");
+      setSuccessMsg('測定データを保存しました！ダッシュボードを確認してください。');
     } catch (err) {
-      console.error("Submit Error:", err);
-      setError("データの保存に失敗しました。");
+      console.error('Submit Error:', err);
+      setError('データの保存に失敗しました。');
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 10, width: '100vw', position: 'absolute', top: 0, left: 0, overflowX: 'hidden' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f7fa',
+        pb: 10,
+        width: '100vw',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        overflowX: 'hidden',
+      }}
+    >
       <Header title="疲労測定" showBackButton={true} />
 
       <Container maxWidth="md" sx={{ mt: 4, textAlign: 'center' }}>
@@ -101,16 +113,48 @@ export default function Measure({ userId }: MeasureProps) {
           現在の自分をスキャン
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-        {successMsg && <Alert severity="success" sx={{ mb: 3 }}>{successMsg}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        {successMsg && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {successMsg}
+          </Alert>
+        )}
 
-        <Paper elevation={6} sx={{ position: 'relative', borderRadius: 4, overflow: 'hidden', bgcolor: '#000', aspectRatio: '16/9', mb: 4 }}>
+        <Paper
+          elevation={6}
+          sx={{
+            position: 'relative',
+            borderRadius: 4,
+            overflow: 'hidden',
+            bgcolor: '#000',
+            aspectRatio: '16/9',
+            mb: 4,
+          }}
+        >
           {!isCameraReady && (
-            <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white' }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: 'white',
+              }}
+            >
               <CircularProgress color="inherit" />
             </Box>
           )}
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
+          />
         </Paper>
 
         {/* --- 手動入力セクション --- */}
@@ -122,7 +166,9 @@ export default function Measure({ userId }: MeasureProps) {
 
             <Stack spacing={4} sx={{ mt: 2, px: 2 }}>
               <Box>
-                <Typography gutterBottom align="left">顔の疲労度: <strong>{faceScore}</strong></Typography>
+                <Typography gutterBottom align="left">
+                  顔の疲労度: <strong>{faceScore}</strong>
+                </Typography>
                 <Slider
                   value={faceScore}
                   onChange={(_, val) => setFaceScore(val as number)}
@@ -132,7 +178,9 @@ export default function Measure({ userId }: MeasureProps) {
               </Box>
 
               <Box>
-                <Typography gutterBottom align="left">声の疲労度: <strong>{voiceScore}</strong></Typography>
+                <Typography gutterBottom align="left">
+                  声の疲労度: <strong>{voiceScore}</strong>
+                </Typography>
                 <Slider
                   value={voiceScore}
                   onChange={(_, val) => setVoiceScore(val as number)}
@@ -143,7 +191,9 @@ export default function Measure({ userId }: MeasureProps) {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={isSending ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                startIcon={
+                  isSending ? <CircularProgress size={20} color="inherit" /> : <SendIcon />
+                }
                 onClick={handleSubmit}
                 disabled={!isCameraReady || isSending}
                 sx={{ py: 1.5, borderRadius: 3, fontWeight: 'bold' }}

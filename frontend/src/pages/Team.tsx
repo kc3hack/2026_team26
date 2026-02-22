@@ -84,9 +84,7 @@ export default function TeamPage(props: TeamProps) {
       );
       if (fatigues.status === 401) {
         await API.tokenRefresh();
-        fatigues = await API.authClient().get<TeamFatigueRes>(
-          `/team/fatigue?team_id=${myTeamId}`,
-        );
+        fatigues = await API.authClient().get<TeamFatigueRes>(`/team/fatigue?team_id=${myTeamId}`);
       }
       const teamData = fatigues.data;
       setTeam(teamData);
@@ -411,7 +409,9 @@ export default function TeamPage(props: TeamProps) {
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {team.fatigue_logs[member.id]?.[-1]?.recorded_at
-                              ? new Date(team.fatigue_logs[member.id][-1].recorded_at).toLocaleString()
+                              ? new Date(
+                                  team.fatigue_logs[member.id][-1].recorded_at,
+                                ).toLocaleString()
                               : '記録なし'}
                           </Typography>
                         </Box>
@@ -420,17 +420,25 @@ export default function TeamPage(props: TeamProps) {
                       {/* ステータスチップ */}
                       <Chip
                         label={getStatusLabel(team.fatigue_logs[member.id]?.[-1]?.face_score)}
-                        color={getStatusColor(team.fatigue_logs[member.id]?.[-1]?.face_score) as StatusColor}
-                        variant={team.fatigue_logs[member.id]?.[-1]?.face_score === undefined ? 'outlined' : 'filled'}
+                        color={
+                          getStatusColor(
+                            team.fatigue_logs[member.id]?.[-1]?.face_score,
+                          ) as StatusColor
+                        }
+                        variant={
+                          team.fatigue_logs[member.id]?.[-1]?.face_score === undefined
+                            ? 'outlined'
+                            : 'filled'
+                        }
                       />
                     </CardContent>
                   </Card>
                 </Box>
               ))}
-              </Box>
-              <Box>
-                <TeamFatigueChart teamData={team} />
-              </Box>
+            </Box>
+            <Box>
+              <TeamFatigueChart teamData={team} />
+            </Box>
           </>
         )}
       </Container>
