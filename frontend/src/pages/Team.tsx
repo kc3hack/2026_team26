@@ -55,11 +55,18 @@ export default function TeamPage(props: TeamProps) {
     setErrorMsg(null);
 
     try {
-      let meRes = await API.authClient().get<MeRes>('/me');
-      if (meRes.status === 401) {
-        await API.tokenRefresh();
-        meRes = await API.authClient().get<MeRes>('/me');
-      }
+          // 1. まずは自分の情報を取得し、所属チームがあるか確認する
+          let meRes;
+          try {
+            meRes = await API.authClient().get<MeRes>('/me');
+          } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+              await API.tokenRefresh();
+              meRes = await API.authClient().get<MeRes>('/me');
+            } else {
+              throw err;
+            }
+          }
 
       const myTeams = meRes.data.user_teams;
 
