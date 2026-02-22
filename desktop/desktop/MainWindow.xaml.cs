@@ -14,6 +14,12 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using System.Diagnostics;
+using Microsoft.VisualBasic.Devices;
+using System.Windows.Media.Media3D;
+using System.Net.Http.Json; // JsonContent.Create や PostAsJsonAsync に必要
+using System.Net.Http.Headers; // AuthenticationHeaderValue に必要
+using System.Windows.Threading;
+
 
 
 namespace desktop
@@ -40,6 +46,16 @@ namespace desktop
         private double _lastAudioScore = 0.0;
         private bool _connected = false;
 
+        // ログイン情報を保持するプロパティ
+        public string AccessToken { get; set; }
+        public string CurrentUserId { get; set; }
+
+        private readonly HttpClient _httpClient = new HttpClient();
+        private DispatcherTimer _sendTimer; // 送信用のタイマー 
+
+        private CameraDevice _camera;
+        private AudioDevice _audio;
+
         public MainWindow()
         {
             // Ensure XAML is loaded even if designer-generated InitializeComponent isn't available.
@@ -56,6 +72,11 @@ namespace desktop
             _cameraCapture = null;
             _audioCapture = null;
 
+
+            _camera = new CameraDevice(0);
+            _audio = new AudioDevice();
+
+
             // resolve in-app device service from DI
             _deviceService = App.CurrentApp.ServiceProvider.GetService(typeof(IDeviceService)) as InAppDeviceService;
             _fatigueUsecase = App.CurrentApp.ServiceProvider.GetService(typeof(FatigueUsecase)) as FatigueUsecase;
@@ -64,6 +85,13 @@ namespace desktop
                 _deviceService.OnVideoFrame += DeviceService_OnVideoFrame;
                 _deviceService.OnAudioData += DeviceService_OnAudioData;
             }
+
+            // --- 自動送信タイマーの設定 (1分間隔) ---
+            _sendTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+            _sendTimer.Tick += async (s, e) => {
+                await AutoSendFatigueAsync(); // 1分ごとにこのメソッドを呼ぶ
+            };
+            _sendTimer.Start();
 
             CompositionTarget.Rendering += UpdateFrame;
 
@@ -158,7 +186,16 @@ namespace desktop
 
         private void UpdateFrame(object sender, EventArgs e)
         {
-            // No-op: frames are pushed from device service events
+            var source = _camera?.GetFrameSource();
+            if (source != null && imageDisplayRef != null)
+            {
+                imageDisplayRef.Source = source;
+            }
+
+            if (_audio != null && volumeBarRef != null)
+            {
+                volumeBarRef.Value = _audio.CurrentVolume;
+            }
         }
 
         private void DeviceService_OnVideoFrame(object sender, VideoFrameEventArgsEx e)
@@ -202,26 +239,62 @@ namespace desktop
 
         private async void SendFatigueButton_Click(object sender, RoutedEventArgs e)
         {
+            // 1. 認証チェック
+            if (string.IsNullOrEmpty(AccessToken) || string.IsNullOrEmpty(CurrentUserId))
+            {
+                MessageBox.Show("ログイン情報が正しく保持されていません。再度ログインしてください。");
+                return;
+            }
+
             try
             {
-                if (_fatigueUsecase == null)
+                // 2. スコアを uint (0-100) に変換
+                // _lastFaceScore, _lastAudioScore は 0.0 ~ 1.0 の前提
+                uint face = (uint)Math.Clamp(Math.Round(_lastFaceScore * 100), 0, 100);
+                uint voice = (uint)Math.Clamp(Math.Round(_lastAudioScore * 100), 0, 100);
+
+                // 3. あなたの record 定義に合わせてインスタンス作成
+                // コンストラクタ引数: UserId, GameId, FaceScore, VoiceScore, RecordedAt
+                var requestBody = new FatigueCreateReq(
+                    CurrentUserId,   // string UserId
+                    null,            // string? GameId
+                    face,            // uint FaceScore
+                    voice,           // uint VoiceScore
+                    DateTime.UtcNow  // DateTime RecordedAt
+                );
+
+                // 4. HTTP POST リクエストの構成
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://test.sheeplab.net/api/fatigue");
+
+                // Bearerトークンのセット
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+
+                // JSONコンテンツのセット (System.Text.Json が自動で recorded_at 等に変換)
+                request.Content = JsonContent.Create(requestBody);
+
+                // 5. 送信
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    MessageBox.Show("Fatigue service not available");
-                    return;
+                    MessageBox.Show($"サーバーへの送信に成功しました！\n顔: {face} / 声: {voice}");
                 }
-
-                // scale scores 0..1 -> 0..100
-                uint face = (uint)Math.Min(100, Math.Max(0, (int)Math.Round(_lastFaceScore * 100)));
-                uint voice = (uint)Math.Min(100, Math.Max(0, (int)Math.Round(_lastAudioScore * 100)));
-
-                var ok = await _fatigueUsecase.RecordFatigueAsync(face, voice, null);
-                if (ok) MessageBox.Show("Fatigue sent"); else MessageBox.Show("Failed to send fatigue");
+                else
+                {
+                    // サーバーからエラーが返った場合 (400, 422 等)
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"送信エラー ({response.StatusCode}):\n{errorBody}");
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error sending fatigue: " + ex.Message);
+                // 通信断絶などの例外
+                MessageBox.Show($"通信に失敗しました: {ex.Message}");
             }
         }
+
+
+
 
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
@@ -302,6 +375,47 @@ namespace desktop
                 catch { }
                 if (audioConnectButtonRef != null) audioConnectButtonRef.Content = "Connect Audio";
                 _audioConnected = false;
+            }
+        }
+
+        // 送信用の共通メソッド（ボタンクリックの中身をここに移動）
+        private async Task AutoSendFatigueAsync()
+        {
+            // 認証情報やIDがない、またはまだ計測スコアが更新されていない場合はスキップ
+            if (string.IsNullOrEmpty(AccessToken) || string.IsNullOrEmpty(CurrentUserId)) return;
+
+            try
+            {
+                uint face = (uint)Math.Clamp(Math.Round(_lastFaceScore * 100), 0, 100);
+                uint voice = (uint)Math.Clamp(Math.Round(_lastAudioScore * 100), 0, 100);
+
+                var requestBody = new FatigueCreateReq(
+                    UserId: CurrentUserId,
+                    GameId: null, // game_id
+                    FaceScore: face,
+                    VoiceScore: voice,
+                    RecordedAt: DateTime.UtcNow
+                ); ;
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://test.sheeplab.net/api/fatigue");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AccessToken);
+                request.Content = JsonContent.Create(requestBody);
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // ログに記録（MessageBoxだと作業の邪魔になるため）
+                    Debug.WriteLine($"[AutoSend Success] {DateTime.Now}: Face={face}, Voice={voice}");
+                }
+                else
+                {
+                    Debug.WriteLine($"[AutoSend Failed] {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AutoSend Error] {ex.Message}");
             }
         }
 

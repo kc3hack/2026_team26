@@ -52,6 +52,33 @@ namespace desktop
             // 注意: ここにあった var serviceProvider = ... は削除しました
         }
 
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
+            // アプリが勝手に終了しないように設定
+            this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            LoginWindow loginWin = new LoginWindow();
+            if (loginWin.ShowDialog() == true)
+            {
+                MainWindow mainWin = new MainWindow();
+                mainWin.AccessToken = loginWin.AuthToken;
+                mainWin.CurrentUserId = loginWin.UserId;
+
+                // メイン画面を表示
+                mainWin.Show();
+
+                // メイン画面が表示されたら、終了モードを「主ウィンドウが閉じたら終了」に戻す
+                this.MainWindow = mainWin;
+                this.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            }
+            else
+            {
+                Shutdown();
+            }
+        }
+
         // ViewModelなどで簡単に ServiceProvider を取得するためのヘルパー
         public static App CurrentApp => (App)Application.Current;
     }

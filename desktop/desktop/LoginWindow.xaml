@@ -1,0 +1,35 @@
+﻿<Window x:Class="desktop.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="認証" Height="400" Width="400" WindowStartupLocation="CenterScreen" Background="#F3F3F3">
+    <Grid Margin="20">
+        <TabControl Background="White" BorderBrush="#DDDDDD">
+            <TabItem Header="サインイン" Padding="10,5">
+                <StackPanel Margin="20">
+                    <TextBlock Text="メールアドレス" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtSignInEmail" Height="30" Margin="0,0,0,15" VerticalContentAlignment="Center"/>
+
+                    <TextBlock Text="パスワード" Margin="0,0,0,5"/>
+                    <PasswordBox x:Name="txtSignInPass" Height="30" Margin="0,0,0,20" VerticalContentAlignment="Center"/>
+
+                    <Button Content="ログイン" Height="40" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="SignIn_Click"/>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="新規登録" Padding="10,5">
+                <StackPanel Margin="20">
+                    <TextBlock Text="ユーザー名" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtSignUpName" Height="30" Margin="0,0,0,10" VerticalContentAlignment="Center"/>
+
+                    <TextBlock Text="メールアドレス" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtSignUpEmail" Height="30" Margin="0,0,0,10" VerticalContentAlignment="Center"/>
+
+                    <TextBlock Text="パスワード" Margin="0,0,0,5"/>
+                    <PasswordBox x:Name="txtSignUpPass" Height="30" Margin="0,0,0,15" VerticalContentAlignment="Center"/>
+
+                    <Button Content="アカウント作成" Height="40" Background="#28A745" Foreground="White" FontWeight="Bold" Click="SignUp_Click"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

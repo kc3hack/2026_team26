@@ -78,7 +78,7 @@ public class CameraCapture : IDisposable
                 byte[] imgBytes;
                 try
                 {
-                    imgBytes = Cv2.ImEncode(".jpg", mat, new ImageEncodingParam(ImwriteFlags.JpegQuality, 75));
+                    Cv2.ImEncode(".jpg", mat, out imgBytes, new ImageEncodingParam(ImwriteFlags.JpegQuality, 75));
                 }
                 catch
                 {
