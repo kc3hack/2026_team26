@@ -40,7 +40,7 @@ func (s *TeamService) GetTeamIDFromCode(teamTag string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return t.ID, nil
+	return t, nil
 }
 
 func (s *TeamService) Join(teamId, userId string) (*response.TeamJoin, error) {
